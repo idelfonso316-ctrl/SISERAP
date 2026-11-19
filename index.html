@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SISERAP · Seguimiento de RA pendientes</title>
+<meta name="theme-color" content="#1f3a5f">
+<meta name="description" content="Sistema de Seguimiento de Resultados de Aprendizaje Pendientes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f3f5f8;--sf:#fff;--tx:#1b2430;--mu:#5b6675;--br:#d3d9e1;--pr:#1f3a5f;--pt:#fff;--er:#b42318;--ok:#1d7a46}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10151c;--sf:#19212b;--tx:#e8edf3;--mu:#9aa6b5;--br:#2d3846;--pr:#7ea6d9;--pt:#0b1118;--er:#f0877d;--ok:#59c98a}}
+:root[data-theme="dark"]{--bg:#10151c;--sf:#19212b;--tx:#e8edf3;--mu:#9aa6b5;--br:#2d3846;--pr:#7ea6d9;--pt:#0b1118;--er:#f0877d;--ok:#59c98a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{background:var(--sf);border-bottom:1px solid var(--br);padding:10px 14px;display:flex;gap:10px;align-items:center}
+.logo{width:40px;height:40px;border-radius:8px;background:var(--pr);color:var(--pt);display:grid;place-items:center;font-weight:700;font-size:12px}
+header b{display:block;font-size:14px}header small{color:var(--mu)}
+.app{display:flex;min-height:100vh}.col{flex:1;min-width:0}
+nav{width:200px;flex:none;position:sticky;top:0;align-self:flex-start;height:100vh;overflow-y:auto;background:var(--sf);border-right:1px solid var(--br);padding:8px;display:flex;flex-direction:column;gap:4px}
+nav button{display:flex;align-items:center;gap:10px;text-align:left;white-space:nowrap;border-color:transparent;background:transparent;width:100%}
+nav button.on{background:var(--pr);color:var(--pt)}nav .ic{font-size:18px;width:22px;text-align:center;flex:none}
+nav.c{width:60px}nav.c .tx{display:none}nav.c button{justify-content:center;padding:9px 0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:-4px}.chip{min-height:34px;padding:2px 12px;font-size:13px;border-radius:17px;color:var(--pr)}
+#sheet table.sq th:first-child,#sheet table.sq td:first-child{width:72px;text-align:left}#sheet table.sq th:last-child{width:auto}
+main{max-width:980px;margin:0 auto;padding:12px 14px 80px}
+.card{background:var(--sf);border:1px solid var(--br);border-radius:10px;padding:14px;margin-bottom:12px}
+h2{font-size:17px;margin:0 0 10px}.mu{color:var(--mu);font-size:13px}
+button,input,select,textarea{font:inherit;color:var(--tx);background:var(--sf);border:1px solid var(--br);border-radius:8px;padding:9px 12px;min-height:44px;max-width:100%}
+button{cursor:pointer}button.on,button.p{background:var(--pr);color:var(--pt);border-color:var(--pr);font-weight:600}
+button.sm{min-height:36px;padding:4px 10px}
+label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mu)}
+label input,label select,label textarea{color:var(--tx)}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}.w{grid-column:1/-1}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px}
+.kpis .card{margin:0}.n{font-size:28px;font-weight:700;color:var(--pr)}
+.bar{display:grid;grid-template-columns:150px 1fr 28px;gap:8px;align-items:center;margin:6px 0;font-size:14px}
+.tr{background:var(--bg);border-radius:4px;height:14px}.tr i{display:block;height:100%;background:var(--pr);border-radius:4px}
+.tw{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border-bottom:1px solid var(--br);padding:7px 8px;text-align:left;vertical-align:top}th{color:var(--mu);font-weight:600}
+.tag{font-size:11px;background:var(--bg);border:1px solid var(--br);border-radius:6px;padding:1px 6px}
+.ok{color:var(--ok)}.warn{background:var(--bg);border:1px solid var(--br);border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:13px}
+details summary{cursor:pointer;color:var(--pr);font-size:13px}
+textarea{width:100%}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));background:var(--pr);color:var(--pt);padding:10px 16px;border-radius:8px;display:none;max-width:90%;z-index:5}
+#toast.show{display:block}#toast.er{background:var(--er);color:#fff}
+#sheet{background:#fff;color:#1b2430;max-width:8.5in;min-width:680px;margin:0 auto;padding:.5in;border:1px solid var(--br);border-radius:6px;font:13px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+#sheet .hd{display:flex;align-items:center;gap:12px;padding-bottom:12px;border-bottom:3px solid #1f3a5f}
+#sheet .lg{width:46px;height:46px;border-radius:10px;background:#1f3a5f;color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px}
+#sheet .hd b{font-size:14px;letter-spacing:.04em;color:#1f3a5f}
+#sheet .hd span{display:block;font-size:12px;color:#5b6675;margin-top:2px}
+#sheet h3{font-size:16px;font-weight:700;margin:16px 0 14px;color:#1b2430}
+#sheet .idg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+#sheet .idg div{background:#f1f4f8;border-radius:8px;padding:6px 10px;font-size:11px;color:#5b6675}
+#sheet .idg b{display:block;font-size:13px;color:#1b2430;min-height:17px}
+#sheet table{font-size:12px;border-collapse:separate;border-spacing:0;border:1px solid #c9d1dc;border-radius:8px;overflow:hidden}
+#sheet th{background:#1f3a5f;color:#fff;font-weight:600;font-size:11px;padding:6px 8px;border:0}
+#sheet td{border:0;border-top:1px solid #dfe4ec;color:#1b2430;height:9mm;padding:2px 8px}
+#sheet tbody tr:nth-child(even) td{background:#f8fafc}
+#sheet th:first-child,#sheet td:first-child{width:28px;text-align:center}#sheet th:last-child{width:24%}
+#sheet thead{display:table-header-group}#sheet tr{break-inside:avoid}
+#sheet .sg{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;margin-top:44px;text-align:center;font-size:11px;color:#5b6675}
+#sheet .sg div{border-top:1.5px solid #1b2430;padding-top:5px}
+#sheet .ft{margin-top:24px;font-size:10px;color:#8793a3;display:flex;justify-content:space-between;border-top:1px solid #dfe4ec;padding-top:6px}
+@page{size:letter portrait;margin:14mm}
+@media print{.np{display:none!important}body{background:#fff}main{padding:0;max-width:none}#sheet{border:0;padding:0;max-width:none;min-width:0}.tw{overflow:visible}}
+</style></head><body>
+<div class="app"><nav id="nav" class="np"></nav><div class="col"><header class="np"><button class="sm" onclick="tgNav()" title="Contraer o expandir menú" aria-label="Contraer o expandir menú">☰</button><div class="logo">NSPS</div><div><b>Politécnico Nuestra Señora del Perpetuo Socorro</b><small>SISERAP · Seguimiento de RA pendientes</small></div><div style="margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end"><small id="date"></small><small id="net"></small><button class="sm" id="th" onclick="tgTheme()"></button><button class="sm p" onclick="inst()">⬇ Instalar app</button></div></header>
+<main><div class="warn np" id="warn"></div><div id="main"></div></main></div></div>
+<div id="toast" role="status"></div>
+<script>
+const ES=['Pendiente','En proceso','Evidencia presentada','En revisión','Completado','Requiere seguimiento'];
+const S=['students','ras','evs','segs','log','cfg'];
+const D={students:[],ras:[],evs:[],segs:[],log:[],cfg:[]};
+const $=s=>document.querySelector(s);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const today=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+const fmt=d=>d?d.split('-').reverse().join('/'):'';
+const st=id=>D.students.find(s=>s.id===id)||{};
+const nm=s=>(s.apellidos||'?')+', '+(s.nombres||'');
+const dt=o=>o.demo?' <span class="tag">DEMO</span>':'';
+let edE=null,edG=null,dc=null,rst=false,draft={},nc=innerWidth<700,sgm='reg',sgi='',dp=null,DL=null,db=null,view='panel',ed=null,fl={q:'',g:'',s:'',a:'',r:'',e:''},fo={g:'',s:'',a:'',d:'',f:today(),i:''};
+const toast=(m,e)=>{const t=$('#toast');t.textContent=m;t.className='show'+(e?' er':'');clearTimeout(toast.h);toast.h=setTimeout(()=>t.className='',3500)};
+function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open('siserap',2);r.onupgradeneeded=()=>S.forEach(s=>{if(!r.result.objectStoreNames.contains(s))r.result.createObjectStore(s,{keyPath:'id'})});r.onsuccess=()=>{db=r.result;res()};r.onerror=()=>rej(r.error)})}
+const put=(s,o)=>{const i=D[s].findIndex(x=>x.id===o.id);i<0?D[s].push(o):D[s][i]=o;return db?new Promise(r=>{const t=db.transaction(s,'readwrite');t.objectStore(s).put(o);t.oncomplete=r;t.onerror=r}):Promise.resolve()};
+const lg=a=>put('log',{id:uid(),t:new Date().toISOString(),a});
+const fd=e=>{e.preventDefault();return Object.fromEntries(new FormData(e.target))};
+const f=(n,l,v='',t='text',x='')=>`<label>${l}<input name="${n}" type="${t}" value="${esc(v)}" ${x}></label>`;
+const ta=(n,l,v='',x='')=>`<label class="w">${l}<textarea name="${n}" rows="2" ${x}>${esc(v)}</textarea></label>`;
+const sel=(n,l,o,v='',x='')=>`<label>${l}<select name="${n}" ${x}>${o.map(p=>{const[a,b]=Array.isArray(p)?p:[p,p];return `<option value="${esc(a)}"${a===v?' selected':''}>${esc(b)}</option>`}).join('')}</select></label>`;
+const tbl=(h,r)=>`<div class="tw"><table><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr>${r.map(c=>`<tr>${c.map(x=>`<td>${x}</td>`).join('')}</tr>`).join('')||`<tr><td colspan="${h.length}">Sin registros.</td></tr>`}</table></div>`;
+const uniq=k=>[...new Set(D.students.map(s=>s[k]).filter(Boolean))].sort();
+const dl=(id,k)=>`<datalist id="${id}">${uniq(k).map(v=>`<option value="${esc(v)}">`).join('')}</datalist>`;
+const opts=(k,v,all='Todos')=>[['',all],...uniq(k)].map(p=>{const[a,b]=Array.isArray(p)?p:[p,p];return `<option value="${esc(a)}"${a===v?' selected':''}>${esc(b)}</option>`}).join('');
+const raOpts=()=>D.ras.map(r=>[r.id,nm(st(r.est))+' · '+r.cod]);
+const csvc=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+function out(t,x,fn){$('#out').innerHTML=`<div class="card"><h2>${t}</h2><textarea id="ox" rows="8" readonly>${esc(x)}</textarea><p>${fn?`<button class="p" onclick="dlf('${fn}')">⬇ Descargar archivo</button> `:''}<button onclick="$('#ox').select();document.execCommand('copy');toast('Copiado.')">Copiar al portapapeles</button></p></div>`}
+
+/* PANEL */
+function vPanel(){const c=e=>D.ras.filter(r=>r.estado===e).length;
+const k=[['Estudiantes',D.students.length],['RA pendientes',c('Pendiente')+c('Requiere seguimiento')],['RA en proceso',c('En proceso')+c('Evidencia presentada')],['RA en revisión',c('En revisión')],['RA completados',c('Completado')],['Evidencias por validar',D.evs.filter(e=>e.res==='Sin evaluar').length]];
+const mx=Math.max(1,...ES.map(c));
+return `<div class="kpis">${k.map(([a,b])=>`<div class="card"><div class="n">${b}</div><div class="mu">${a}</div></div>`).join('')}</div>
+<div class="card"><h2>RA por estado</h2>${ES.map(e=>`<div class="bar"><span>${e}</span><div class="tr"><i style="width:${c(e)/mx*100}%"></i></div><b>${c(e)}</b></div>`).join('')}</div>`
++(D.students.length?'':`<div class="card">Aún no hay datos. Registre estudiantes o <button class="sm" onclick="demo()">cargar datos de demostración</button>.</div>`)}
+
+/* ESTUDIANTES */
+const cs=(n,l,t,v='')=>sel(n,l,[['','— Seleccione —'],...[...new Set([...D.cfg.filter(c=>c.t===t).map(c=>c.v),...(v?[v]:[])])].sort()],v);
+async function addC(t,i){const v=$('#'+i).value.trim();if(!v)return toast('Escriba el nombre antes de agregar.',1);
+if(D.cfg.some(c=>c.t===t&&c.v.toLowerCase()===v.toLowerCase()))return toast('Ya existe en la lista.',1);
+draft=Object.fromEntries(new FormData(document.querySelector('form')));draft[t==='asig'?'asignatura':'anio']=v;
+await put('cfg',{id:uid(),t,v});lg('Agregó '+(t==='asig'?'asignatura ':'año escolar ')+v);toast('Agregado a la lista.');render()}
+function vEst(){const s={...(ed?st(ed):{}),...draft};
+return `<div class="card"><h2>${ed?'Editar':'Registrar'} estudiante</h2><form onsubmit="saveS(event)" class="g">${f('apellidos','Apellidos *',s.apellidos,'text','required')}${f('nombres','Nombres *',s.nombres,'text','required')}${f('grado','Grado *',s.grado,'text','required list="dg"')}${f('seccion','Sección *',s.seccion,'text','required list="ds"')}${f('area','Área técnica *',s.area,'text','required list="da"')}${cs('asignatura','Asignatura','asig',s.asignatura)}<div class="w chips"><input id="na" placeholder="Nueva asignatura" style="min-height:34px" onkeydown="if(event.key==='Enter'){event.preventDefault();addC('asig','na')}"> <button type="button" class="sm" onclick="addC('asig','na')">+ Agregar asignatura</button></div>${cs('anio','Año escolar','anio',s.anio)}<div class="w chips"><input id="nay" placeholder="Ej.: 2026-2027" style="min-height:34px" onkeydown="if(event.key==='Enter'){event.preventDefault();addC('anio','nay')}"> <button type="button" class="sm" onclick="addC('anio','nay')">+ Agregar año escolar</button></div>${f('docente','Docente responsable *',s.docente,'text','required list="dd"')}${f('fecha','Fecha de registro',s.fecha||today(),'date')}<div class="w"><button class="p">Guardar</button> ${ed?'<button type="button" onclick="ed=null;draft={};render()">Cancelar</button>':''}</div></form>${dl('dg','grado')}${dl('ds','seccion')}${dl('da','area')}${dl('dd','docente')}</div>
+<div class="card"><h2>Estudiantes</h2><div class="g"><input placeholder="Buscar por nombre" value="${esc(fl.q)}" oninput="fl.q=this.value;$('#lst').innerHTML=listS()"><select onchange="fl.g=this.value;$('#lst').innerHTML=listS()">${opts('grado',fl.g,'Todos los grados')}</select><select onchange="fl.s=this.value;$('#lst').innerHTML=listS()">${opts('seccion',fl.s,'Todas las secciones')}</select><select onchange="fl.a=this.value;$('#lst').innerHTML=listS()">${opts('area',fl.a,'Todas las áreas')}</select></div><div id="lst">${listS()}</div></div>`}
+function listS(){const q=fl.q.toLowerCase();
+return tbl(['Estudiante','Grado/Secc.','Área','Asignatura','Año','RA',''],D.students.filter(s=>(!q||nm(s).toLowerCase().includes(q))&&(!fl.g||s.grado===fl.g)&&(!fl.s||s.seccion===fl.s)&&(!fl.a||s.area===fl.a)).map(s=>[esc(nm(s))+dt(s),esc(s.grado+' '+s.seccion),esc(s.area),esc(s.asignatura),esc(s.anio),D.ras.filter(x=>x.est===s.id).length,`<button class="sm" onclick="ed='${s.id}';draft={};render()">Editar</button>`]))}
+async function saveS(e){const d=fd(e);const k=x=>(x||'').trim().toLowerCase();
+if(D.students.some(s=>s.id!==ed&&k(s.apellidos)===k(d.apellidos)&&k(s.nombres)===k(d.nombres)&&k(s.grado)===k(d.grado)&&k(s.seccion)===k(d.seccion)))return toast('Ya existe un estudiante con ese nombre, grado y sección.',1);
+const o={...(ed?st(ed):{id:uid()}),...d};await put('students',o);lg((ed?'Editó':'Registró')+' estudiante '+nm(o));ed=null;draft={};toast('Estudiante guardado.');render()}
+
+/* RA */
+function vRA(){return `<div class="card"><h2>Asignar RA pendiente</h2>${D.students.length?`<form onsubmit="saveR(event)" class="g">${sel('est','Estudiante *',D.students.map(s=>[s.id,nm(s)+' · '+s.grado+s.seccion]))}${f('cod','Identificación del RA *','','text','required')}${ta('desc','Descripción del RA *','','required')}${f('fecha','Fecha de identificación',today(),'date')}${ta('motivo','Motivo u observación académica')}${f('docente','Docente responsable (si difiere del estudiante)')}${sel('estado','Estado',ES)}<div class="w"><button class="p">Guardar</button></div></form>`:'<p>Primero registre estudiantes.</p>'}</div>
+<div class="card"><h2>RA registrados</h2><div class="g"><input placeholder="Buscar" value="${esc(fl.r)}" oninput="fl.r=this.value;$('#lst').innerHTML=listR()"><select onchange="fl.e=this.value;$('#lst').innerHTML=listR()">${['',...ES].map(x=>`<option value="${x}"${x===fl.e?' selected':''}>${x||'Todos los estados'}</option>`).join('')}</select></div><div id="lst">${listR()}</div></div>`}
+function listR(){const q=fl.r.toLowerCase();
+return tbl(['Estudiante','RA','Estado e historial'],D.ras.filter(r=>(!q||(nm(st(r.est))+r.cod+r.desc).toLowerCase().includes(q))&&(!fl.e||r.estado===fl.e)).map(r=>{const s=st(r.est);
+return [esc(nm(s))+dt(r)+'<br><span class="mu">'+esc(s.grado+' '+s.seccion)+'</span>','<b>'+esc(r.cod)+'</b><br>'+esc(r.desc),`<select onchange="setE('${r.id}',this.value)">${ES.map(x=>`<option${x===r.estado?' selected':''}>${x}</option>`).join('')}</select><details><summary>Historial (${r.hist.length})</summary>${r.hist.map(h=>`<div class="mu">${fmt(h.f)} · ${esc(h.e)} ${esc(h.n)}</div>`).join('')}</details>`]}))}
+async function saveR(e){const d=fd(e);const s=st(d.est);const r={id:uid(),...d,desc:d.desc.trim(),docente:d.docente.trim()||s.docente,hist:[{f:d.fecha,e:d.estado,n:'RA identificado'}]};await put('ras',r);lg('Asignó RA '+r.cod+' a '+nm(s));toast('RA guardado.');render()}
+async function setE(id,e){const r=D.ras.find(x=>x.id===id);if(r.estado===e)return;r.estado=e;r.hist.push({f:today(),e,n:''});await put('ras',r);lg('RA '+r.cod+' pasó a '+e);toast('Estado actualizado; el historial se conserva.');render()}
+
+/* EVIDENCIAS */
+function vEvi(){const e=edE?D.evs.find(x=>x.id===edE)||{}:{};return `<div class="card"><h2>${edE?'Editar':'Registrar'} evidencia</h2>${D.ras.length?`<form onsubmit="saveEv(event)" class="g">${sel('ra','Estudiante y RA *',raOpts(),e.ra)}${sel('tipo','Tipo de evidencia',['Trabajo escrito','Proyecto','Práctica de taller','Examen','Portafolio','Otra'],e.tipo)}${ta('desc','Descripción *',e.desc,'required')}${f('frec','Fecha de recepción',e.frec||today(),'date')}${f('docente','Docente responsable',e.docente)}${ta('obs','Observaciones',e.obs)}${ta('criterios','Criterios de evaluación del RA verificados (obligatorio para validar)',e.criterios)}${sel('res','Resultado de la evaluación',['Sin evaluar','Logrado','No logrado'],e.res)}${f('fval','Fecha de validación',e.fval,'date')}<div class="w"><button class="p">Guardar</button>${edE?' <button type="button" onclick="edE=null;render()">Cancelar</button>':''}</div></form><p class="mu">Adjuntar archivos requiere el modo institucional (fase posterior).</p>`:'<p>Primero asigne un RA.</p>'}</div>
+<div class="card"><h2>Evidencias</h2>${tbl(['Estudiante / RA','Evidencia','Recibida','Estado',''],D.evs.slice().reverse().map(v=>{const r=D.ras.find(x=>x.id===v.ra)||{};return [esc(nm(st(r.est)))+'<br>'+esc(r.cod),esc(v.tipo)+'<br>'+esc(v.desc),fmt(v.frec),v.res==='Sin evaluar'?'Recibida':'<b class="ok">Validada</b> · '+esc(v.res)+'<br>'+fmt(v.fval),acts('ev',v.id)]}))}</div>`}
+async function saveEv(e){const d=fd(e);const r=D.ras.find(x=>x.id===d.ra);
+if(d.res!=='Sin evaluar'&&(!d.criterios.trim()||!d.fval))return toast('Para validar indique los criterios verificados y la fecha de validación.',1);
+d.docente=d.docente.trim()||st(r.est).docente;const was=edE;await put('evs',{...(was?D.evs.find(x=>x.id===was):{id:uid()}),...d});lg((was?'Editó evidencia de ':'Evidencia registrada para ')+r.cod);
+if(!was&&['Pendiente','En proceso','Requiere seguimiento'].includes(r.estado)){r.estado='Evidencia presentada';r.hist.push({f:d.frec,e:r.estado,n:'Evidencia recibida'});await put('ras',r)}
+edE=null;toast('Evidencia guardada.');render()}
+
+/* SEGUIMIENTO */
+function vSeg(){const g=edG?D.segs.find(x=>x.id===edG)||{}:{};return `<div class="card np"><button class="${sgm==='reg'?'on':''}" onclick="sgm='reg';render()">Registrar</button> <button class="${sgm==='inf'?'on':''}" onclick="sgm='inf';render()">Informe imprimible</button></div>`+(sgm==='inf'?vSegInf():`<div class="card"><h2>${edG?'Editar':'Registrar'} seguimiento pedagógico</h2><p class="mu">Solo información académica. No incluya diagnósticos ni datos psicológicos.</p>${D.ras.length?`<form onsubmit="saveSg(event)" class="g">${sel('ra','Estudiante y RA *',raOpts(),g.ra)}${f('f','Fecha de seguimiento',g.f||today(),'date')}${ta('sit','Situación identificada *',g.sit,'required')}${ch('sit')}${ta('ori','Orientación ofrecida',g.ori)}${ch('ori')}${ta('act','Actividad de recuperación propuesta',g.act)}${ch('act')}${ta('comp','Compromiso del estudiante',g.comp)}${ch('comp')}${f('facord','Fecha acordada para presentar evidencias',g.facord,'date')}<div class="w chips">${[3,7,14].map(n=>`<button type="button" class="chip" onclick="qd(${n})">+${n} días</button>`).join('')}</div>${f('docente','Docente responsable',g.docente)}${ta('res','Resultado del seguimiento / observaciones',g.res)}${ch('res')}<div class="w"><button class="p">Guardar</button>${edG?' <button type="button" onclick="edG=null;render()">Cancelar</button>':''}</div></form>`:'<p>Primero asigne un RA.</p>'}</div>
+<div class="card"><h2>Historial de actuaciones</h2>${tbl(['Fecha','Estudiante / RA','Actuación',''],D.segs.slice().sort((a,b)=>b.f.localeCompare(a.f)).map(v=>{const r=D.ras.find(x=>x.id===v.ra)||{};return [fmt(v.f)+dt(v),esc(nm(st(r.est)))+'<br>'+esc(r.cod),`<b>Situación:</b> ${esc(v.sit)}<br>${v.ori?'<b>Orientación:</b> '+esc(v.ori)+'<br>':''}${v.act?'<b>Actividad:</b> '+esc(v.act)+'<br>':''}${v.facord?'<b>Entrega acordada:</b> '+fmt(v.facord)+'<br>':''}${esc(v.res)}`,acts('sg',v.id)]}))}</div>`)}
+const SUG={sit:['No entregó la evidencia','Entregó evidencia incompleta','No asistió a las sesiones de recuperación','Dificultad con los contenidos prácticos','Necesita más tiempo'],ori:['Repasar la guía de la unidad','Tutoría en horario de taller','Revisar los criterios de evaluación','Trabajar con material de apoyo'],act:['Repetir la práctica','Entregar un trabajo escrito','Presentar un proyecto corto','Ejercicios de refuerzo'],comp:['Entregar en la fecha acordada','Asistir a las tutorías','Pedir ayuda cuando la necesite'],res:['Entregó la evidencia','No entregó; se reprograma','Evidencia en revisión','Logró el RA']};
+const ch=n=>`<div class="w chips">${SUG[n].map(t=>`<button type="button" class="chip" onclick="addS('${n}',this.textContent)">${t}</button>`).join('')}</div>`;
+function addS(n,t){const e=document.querySelector('form [name="'+n+'"]');const v=e.value.trim();e.value=v?v.replace(/[.;]$/,'')+'; '+t:t;e.focus()}
+function qd(n){document.querySelector('form [name="facord"]').value=new Date(Date.now()-new Date().getTimezoneOffset()*6e4+n*864e5).toISOString().slice(0,10)}
+function vSegInf(){const one=sgi?st(sgi):null;const L=D.segs.map(v=>{const r=D.ras.find(x=>x.id===v.ra)||{};return {v,r,s:st(r.est)}}).filter(x=>!sgi||x.s.id===sgi).sort((a,b)=>a.v.f.localeCompare(b.v.f));
+return `<div class="card np"><h2>Informe de seguimiento</h2><label>Alcance<select onchange="sgi=this.value;render()"><option value="">General (todos los estudiantes)</option>${D.students.map(s=>`<option value="${s.id}"${sgi===s.id?' selected':''}>Individual: ${esc(nm(s))}</option>`).join('')}</select></label><p><button class="p" onclick="window.print()">Imprimir / Guardar como PDF</button></p></div>
+<div class="tw"><div id="sheet"><div class="hd"><div class="lg">NSPS</div><div><b>POLITÉCNICO NUESTRA SEÑORA DEL PERPETUO SOCORRO</b><span>Base Área de San Isidro, Santo Domingo Este</span></div></div><h3>INFORME DE SEGUIMIENTO PEDAGÓGICO${one?' INDIVIDUAL':''}</h3>
+<div class="idg"><div>Fecha de impresión<b>${fmt(today())}</b></div><div>Alcance<b>${one?esc(nm(one)):'General'}</b></div>${one?`<div>Grado y sección<b>${esc(one.grado+' '+one.seccion)}</b></div><div>Área técnica<b>${esc(one.area)}</b></div><div>Asignatura<b>${esc(one.asignatura)}</b></div><div>Año escolar<b>${esc(one.anio)}</b></div>`:''}</div>
+<table class="sq"><thead><tr><th>Fecha</th>${one?'':'<th>Estudiante</th>'}<th>RA</th><th>Situación y orientación</th><th>Actividad y compromiso</th><th>Entrega / resultado</th></tr></thead><tbody>${L.map(({v,r,s})=>`<tr><td>${fmt(v.f)}</td>${one?'':`<td>${esc(nm(s))}</td>`}<td>${esc(r.cod)}</td><td>${esc(v.sit)}${v.ori?'<br>'+esc(v.ori):''}</td><td>${esc(v.act)}${v.comp?'<br>'+esc(v.comp):''}</td><td>${v.facord?fmt(v.facord)+'<br>':''}${esc(v.res)}</td></tr>`).join('')||'<tr><td colspan="6">Sin seguimientos registrados.</td></tr>'}</tbody></table>
+<div class="sg"><div>Firma del profesor</div><div>Firma del Departamento de Psicología</div><div>Firma de Coordinación Académica</div></div>
+<div class="ft"><span>SISERAP · Informe de seguimiento pedagógico</span><span>Fecha del documento: ${fmt(today())}</span></div></div></div>`}
+const acts=(k,id)=>dc===k+id?`<button class="sm" onclick="del('${k}','${id}')">Sí, eliminar</button> <button class="sm" onclick="dc=null;render()">No</button>`:`<button class="sm" onclick="${k==='ev'?`edE='${id}'`:`edG='${id}';sgm='reg'`};dc=null;render();scrollTo(0,0)">Editar</button> <button class="sm" onclick="dc='${k}${id}';render()">Eliminar</button>`;
+async function del(k,id){const s=k==='ev'?'evs':'segs';const o=D[s].find(x=>x.id===id)||{};const r=D.ras.find(x=>x.id===o.ra);D[s]=D[s].filter(x=>x.id!==id);if(db)await new Promise(q=>{const t=db.transaction(s,'readwrite');t.objectStore(s).delete(id);t.oncomplete=q;t.onerror=q});dc=null;if(edE===id)edE=null;if(edG===id)edG=null;lg((k==='ev'?'Eliminó evidencia':'Eliminó seguimiento')+(r?' de '+r.cod:''));toast('Registro eliminado.');render()}
+async function resetAll(){for(const s of S){D[s]=[];if(db)await new Promise(q=>{const t=db.transaction(s,'readwrite');t.objectStore(s).clear();t.oncomplete=q;t.onerror=q})}
+rst=false;edE=edG=dc=ed=null;draft={};fl={q:'',g:'',s:'',a:'',r:'',e:''};fo={g:'',s:'',a:'',d:'',f:today(),i:''};sgi='';sgm='reg';await lg('Reinició la aplicación');toast('Aplicación reiniciada.');go('panel')}
+async function saveSg(e){const d=fd(e);const r=D.ras.find(x=>x.id===d.ra);d.docente=d.docente.trim()||st(r.est).docente;const was=edG;await put('segs',{...(was?D.segs.find(x=>x.id===was):{id:uid()}),...d});edG=null;lg((was?'Editó seguimiento de ':'Seguimiento registrado para ')+r.cod);toast('Seguimiento guardado.');render()}
+
+/* FORMULARIO */
+const eAt=(r,d)=>{const h=r.hist.filter(x=>x.f<=d);return h.length?h[h.length-1].e:null};
+function rowsF(){return D.ras.map(r=>({r,s:st(r.est)})).filter(({r,s})=>{const e=eAt(r,fo.f);return e&&e!=='Completado'&&(fo.i?s.id===fo.i:(!fo.g||s.grado===fo.g)&&(!fo.s||s.seccion===fo.s)&&(!fo.a||s.area===fo.a)&&(!fo.d||s.docente===fo.d))}).sort((a,b)=>nm(a.s).localeCompare(nm(b.s)))}
+function vForm(){return `<div class="card np"><h2>Generar formulario</h2><div class="g"><label>Estudiante (individual)<select onchange="fo.i=this.value;render()"><option value="">Grupal</option>${D.students.map(s=>`<option value="${s.id}"${fo.i===s.id?' selected':''}>${esc(nm(s))}</option>`).join('')}</select></label><label>Grado<select onchange="fo.g=this.value;render()">${opts('grado',fo.g)}</select></label><label>Sección<select onchange="fo.s=this.value;render()">${opts('seccion',fo.s)}</select></label><label>Área técnica<select onchange="fo.a=this.value;render()">${opts('area',fo.a)}</select></label><label>Docente<select onchange="fo.d=this.value;render()">${opts('docente',fo.d)}</select></label>${f('f','Fecha del formulario (también para históricos)',fo.f,'date','onchange="fo.f=this.value||today();render()"')}</div><p><button class="p" onclick="window.print()">Imprimir / Guardar como PDF</button></p><p class="mu">La firma del estudiante queda en blanco. Un formulario con fecha anterior se calcula con el historial y no modifica datos.</p></div>
+<div class="tw">${sheet()}</div>`}
+function sheet(){const R=rowsF();const u=k=>[...new Set(R.map(x=>x.s[k]).filter(Boolean))].join(', ');
+const gs=[...new Set(R.map(x=>x.s.grado+' '+x.s.seccion))].join(', ');const n=Math.max(14,R.length);let b='';
+for(let i=0;i<n;i++){const x=R[i];b+=`<tr><td>${i+1}</td><td>${x?esc(x.s.apellidos):''}</td><td>${x?esc(x.s.nombres):''}</td><td>${x?esc(x.s.grado+' '+x.s.seccion):''}</td><td>${x?esc(x.r.cod+' – '+x.r.desc):''}</td><td></td></tr>`}
+return `<div id="sheet"><div class="hd"><div class="lg">NSPS</div><div><b>POLITÉCNICO NUESTRA SEÑORA DEL PERPETUO SOCORRO</b><span>Base Área de San Isidro, Santo Domingo Este</span></div></div><h3>ESTUDIANTES CON RESULTADOS DE APRENDIZAJE PENDIENTES DE COMPLETAR</h3>
+<div class="idg"><div>Fecha<b>${fmt(fo.f)}</b></div><div>Docente responsable<b>${esc(fo.d||u('docente'))}</b></div><div>Grado y sección<b>${esc(gs)}</b></div><div>Área técnica<b>${esc(fo.a||u('area'))}</b></div><div>Asignatura<b>${esc(u('asignatura'))}</b></div><div>Año escolar<b>${esc(u('anio'))}</b></div></div>
+<table><thead><tr><th>No.</th><th>Apellidos</th><th>Nombres</th><th>Grado / Sección</th><th>Resultado de Aprendizaje pendiente</th><th>Firma del estudiante</th></tr></thead><tbody>${b}</tbody></table>
+<div class="sg"><div>Firma del profesor</div><div>Firma del Departamento de Psicología</div><div>Firma de Coordinación Académica</div></div>
+<div class="ft"><span>SISERAP · Formulario de RA pendientes</span><span>Fecha del documento: ${fmt(fo.f)}</span></div></div>`}
+
+/* INFORMES */
+function vInf(){const R=infRows();return `<div class="card"><h2>Informe de RA</h2><div class="g"><select onchange="fl.e=this.value;render()">${['',...ES].map(x=>`<option value="${x}"${x===fl.e?' selected':''}>${x||'Todos los estados'}</option>`).join('')}</select><select onchange="fl.g=this.value;render()">${opts('grado',fl.g,'Todos los grados')}</select><select onchange="fl.a=this.value;render()">${opts('area',fl.a,'Todas las áreas')}</select></div><p><b>${R.length}</b> RA en el informe. <button class="sm" onclick="csv()">Ver como CSV</button></p>${tbl(['Estudiante','Grado/Secc.','Área','RA','Estado'],R.map(({r,s})=>[esc(nm(s)),esc(s.grado+' '+s.seccion),esc(s.area),esc(r.cod),esc(r.estado)]))}</div><div id="out"></div>`}
+const infRows=()=>D.ras.map(r=>({r,s:st(r.est)})).filter(({r,s})=>(!fl.e||r.estado===fl.e)&&(!fl.g||s.grado===fl.g)&&(!fl.a||s.area===fl.a));
+function csv(){out('CSV del informe',[['Apellidos','Nombres','Grado','Sección','Área','Docente','RA','Descripción','Estado','Fecha']].concat(infRows().map(({r,s})=>[s.apellidos,s.nombres,s.grado,s.seccion,s.area,r.docente,r.cod,r.desc,r.estado,r.fecha])).map(l=>l.map(csvc).join(',')).join('\n'),'siserap-informe.csv')}
+
+/* RESPALDO */
+function vResp(){return `<div class="card"><h2>Instalar como aplicación</h2><ul><li><b>Windows, macOS o Linux (Chrome o Edge):</b> menú del navegador → «Instalar SISERAP» o «Guardar y compartir → Instalar como aplicación».</li><li><b>Android (Chrome):</b> menú ⋮ → «Instalar aplicación» o «Añadir a la pantalla de inicio».</li><li><b>iPhone / iPad (Safari):</b> botón Compartir → «Añadir a pantalla de inicio».</li></ul><p><button class="p" onclick="dlApp()">⬇ Descargar copia de la app (.html)</button></p><p class="mu">Cada copia guarda sus datos por separado: use Generar respaldo y Restaurar para pasar información entre copias o equipos. Publicada en una dirección HTTPS, el navegador puede ofrecer instalarla y mantenerla disponible sin conexión. El instalador de Windows y el APK de Android corresponden a la Fase 2.</p></div><div class="card"><h2>Respaldo y datos</h2><div class="w"><button onclick="out('Respaldo (JSON)',JSON.stringify({app:'SISERAP',v:1,t:new Date().toISOString(),...D}),'siserap-respaldo.json')">Generar respaldo</button> <button onclick="demo()">Cargar datos DEMO</button> <button onclick="rmDemo()">Quitar datos DEMO</button></div></div><div id="out"></div>
+<div class="card"><h2>Restaurar respaldo</h2><p class="mu">Reemplaza todos los datos actuales.</p><input type="file" accept=".json,.txt" onchange="readF(this)"><p><textarea id="rt" rows="3" placeholder="…o pegue aquí el respaldo"></textarea></p><button onclick="restore($('#rt').value)">Restaurar desde texto</button></div>
+<div class="card"><h2>Reiniciar la app desde cero</h2>${rst?`<p style="color:var(--er)"><b>Se borrarán todos los estudiantes, RA, evidencias, seguimientos, listas y el registro de actividad de este navegador. No se puede deshacer.</b></p><p class="mu">Si lo necesita, genere un respaldo antes.</p><button style="background:var(--er);border-color:var(--er);color:#fff" onclick="resetAll()">Sí, borrar todo y reiniciar</button> <button onclick="rst=false;render()">Cancelar</button>`:`<p class="mu">Elimina todos los datos y deja la aplicación como nueva.</p><button onclick="rst=true;render()">Reiniciar app…</button>`}</div>
+<div class="card"><h2>Registro de actividad</h2>${tbl(['Fecha','Acción'],D.log.slice(-30).reverse().map(l=>[new Date(l.t).toLocaleString('es-DO'),esc(l.a)]))}</div>`}
+function readF(i){const r=new FileReader();r.onload=()=>restore(r.result);r.readAsText(i.files[0])}
+async function restore(t){try{const j=JSON.parse(t);if(j.app!=='SISERAP')throw 0;
+for(const s of S){D[s]=[];if(db)await new Promise(r=>{const x=db.transaction(s,'readwrite');x.objectStore(s).clear();x.oncomplete=r})}
+for(const s of S)for(const o of (Array.isArray(j[s])?j[s]:[]))if(o&&o.id)await put(s,o);
+await lg('Restauró un respaldo');toast('Respaldo restaurado.');render()}catch{toast('El texto no es un respaldo válido de SISERAP.',1)}}
+async function rmDemo(){for(const s of S)for(const o of D[s].filter(x=>x.demo)){D[s]=D[s].filter(x=>x!==o);if(db)db.transaction(s,'readwrite').objectStore(s).delete(o.id)}toast('Datos de demostración eliminados.');render()}
+async function demo(){const A=[['Pérez Demo','Ana','4.º','A','Informática','Prof. Ramírez (demo)'],['Gómez Demo','Luis','4.º','A','Informática','Prof. Ramírez (demo)'],['Santos Demo','Marta','5.º','B','Contabilidad','Prof. Almonte (demo)'],['Díaz Demo','Carlos','5.º','B','Contabilidad','Prof. Almonte (demo)'],['Reyes Demo','Sofía','6.º','A','Electricidad','Prof. Mejía (demo)']];
+const T=['Instalar y configurar redes locales','Elaborar estados financieros básicos','Montar circuitos de iluminación','Programar aplicaciones con bases de datos'];
+for(const [i,a] of A.entries()){const s={id:uid(),demo:1,apellidos:a[0],nombres:a[1],grado:a[2],seccion:a[3],area:a[4],asignatura:['Redes','Contabilidad','Instalaciones','Programación'][i%4],anio:'2026-2027',docente:a[5],fecha:today()};await put('students',s);
+for(let j=0;j<=i%2;j++){const e=ES[(i+j)%6];const r={id:uid(),demo:1,est:s.id,cod:'RA-'+(i+1)+'.'+(j+1),desc:T[(i+j)%4]+' (demo)',fecha:today(),motivo:'Evidencia insuficiente (demo)',docente:s.docente,estado:e,hist:[{f:today(),e:'Pendiente',n:'RA identificado'}]};if(e!=='Pendiente')r.hist.push({f:today(),e,n:''});await put('ras',r);
+if(j===0)await put('segs',{id:uid(),demo:1,ra:r.id,f:today(),sit:'No entregó la práctica final (demo)',ori:'Repasar la guía de la unidad',act:'Repetir la práctica',comp:'Entregar en una semana',facord:today(),docente:s.docente,res:''})}}
+await lg('Cargó datos de demostración');toast('Datos DEMO cargados.');render()}
+
+/* NAVEGACIÓN */
+const NAV=[['panel','Panel','📊'],['est','Estudiantes','🎓'],['ra','RA','📌'],['evi','Evidencias','📎'],['seg','Seguimiento','📝'],['form','Formulario','🖨️'],['inf','Informes','📈'],['resp','Respaldo e instalación','💾']];
+const V={panel:vPanel,est:vEst,ra:vRA,evi:vEvi,seg:vSeg,form:vForm,inf:vInf,resp:vResp};
+const go=v=>{view=v;ed=null;edE=null;edG=null;dc=null;rst=false;draft={};render();scrollTo(0,0)};
+const pref=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}};
+const eff=()=>document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+function tgTheme(){const t=eff()==='dark'?'light':'dark';document.documentElement.dataset.theme=t;pref('th',t);render()}
+function tgNav(){nc=!nc;pref('nc',nc?'1':'0');render()}
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e});
+function inst(){if(dp){dp.prompt();dp.userChoice.finally(()=>dp=null);return}view='resp';render();scrollTo(0,0)}
+async function saveFile(fn,data){try{if(DL)await DL.save({filename:fn,data});else{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'text/plain;charset=utf-8'}));a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1e4)}toast('Archivo guardado.')}catch(e){if(!e||e.code!=='declined')toast('No se pudo guardar el archivo.',1)}}
+const dlf=fn=>saveFile(fn,(fn.endsWith('.csv')?'\ufeff':'')+$('#ox').value);
+function dlApp(){const c=document.documentElement.cloneNode(true);['#main','#nav'].forEach(s=>c.querySelector(s).innerHTML='');const t=c.querySelector('#toast');t.className='';t.textContent='';saveFile('SISERAP.html','<!DOCTYPE html>\n'+c.outerHTML)}
+function render(){$('#nav').className='np'+(nc?' c':'');$('#th').textContent=eff()==='dark'?'☀️ Modo claro':'🌙 Modo oscuro';$('#nav').innerHTML=NAV.map(([k,l,i])=>`<button class="${k===view?'on':''}" onclick="go('${k}')" title="${l}" aria-label="${l}"><span class="ic">${i}</span><span class="tx">${l}</span></button>`).join('');
+$('#main').innerHTML=V[view]();$('#date').textContent=new Date().toLocaleDateString('es-DO',{day:'numeric',month:'long',year:'numeric'});
+$('#net').textContent=navigator.onLine?'En línea':'Sin conexión';
+$('#warn').textContent=db?'Modo local: los datos se guardan solo en este navegador y no se sincronizan con otros dispositivos. Haga respaldos periódicos.':'Almacenamiento no disponible: los datos se perderán al cerrar esta página.'}
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+addEventListener('online',render);addEventListener('offline',render);
+{const t=pref('th');if(t)document.documentElement.dataset.theme=t;const c=pref('nc');if(c)nc=c==='1'}
+try{window.claude&&claude.use('downloads').then(d=>DL=d).catch(()=>{})}catch(e){}
+(async()=>{try{await openDB();for(const s of S)D[s]=await new Promise(r=>{const q=db.transaction(s).objectStore(s).getAll();q.onsuccess=()=>r(q.result)})}catch(e){db=null}render()})();
+</script></body></html>
