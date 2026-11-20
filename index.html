@@ -22,7 +22,16 @@ nav{width:200px;flex:none;position:sticky;top:0;align-self:flex-start;height:100
 nav button{display:flex;align-items:center;gap:10px;text-align:left;white-space:nowrap;border-color:transparent;background:transparent;width:100%}
 nav button.on{background:var(--pr);color:var(--pt)}nav .ic{font-size:18px;width:22px;text-align:center;flex:none}
 nav.c{width:60px}nav.c .tx{display:none}nav.c button{justify-content:center;padding:9px 0}
-.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:-4px}.chip{min-height:34px;padding:2px 12px;font-size:13px;border-radius:17px;color:var(--pr)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:-4px}
+.menu{position:absolute;right:0;top:calc(100% + 8px);width:min(300px,86vw);background:var(--sf);border:1px solid var(--br);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.25);padding:8px;z-index:20}
+.menu .mi{display:flex;width:100%;gap:10px;align-items:center;text-align:left;border-color:transparent;background:transparent;min-height:42px}
+.menu .mh{display:flex;gap:10px;align-items:center;padding:6px 10px 10px;border-bottom:1px solid var(--br);margin-bottom:8px}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}
+#um{width:46px;height:46px;min-height:46px;padding:0;border-radius:50%;position:relative;border:2px solid var(--br);background:transparent;display:grid;place-items:center}
+#um .dot{position:absolute;right:-1px;bottom:-1px;width:13px;height:13px;border:2px solid var(--sf)}
+.av{border-radius:50%;overflow:hidden;background:var(--pr);color:var(--pt);display:inline-grid;place-items:center;font-weight:700;flex:none}.av img{width:100%;height:100%;object-fit:cover}
+@media (max-width:520px){#date{display:none}}
+.pk{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mu)}.pk input[type=search]{color:var(--tx)}.pkl{display:flex;flex-direction:column;gap:4px}.pkl button{text-align:left}.chip{min-height:34px;padding:2px 12px;font-size:13px;border-radius:17px;color:var(--pr)}
 #sheet table.sq th:first-child,#sheet table.sq td:first-child{width:72px;text-align:left}#sheet table.sq th:last-child{width:auto}
 main{max-width:980px;margin:0 auto;padding:12px 14px 80px}
 .card{background:var(--sf);border:1px solid var(--br);border-radius:10px;padding:14px;margin-bottom:12px}
@@ -66,7 +75,7 @@ textarea{width:100%}
 @page{size:letter portrait;margin:14mm}
 @media print{.np{display:none!important}body{background:#fff}main{padding:0;max-width:none}#sheet{border:0;padding:0;max-width:none;min-width:0}.tw{overflow:visible}}
 </style></head><body>
-<div class="app"><nav id="nav" class="np"></nav><div class="col"><header class="np"><button class="sm" onclick="tgNav()" title="Contraer o expandir menú" aria-label="Contraer o expandir menú">☰</button><div class="logo">NSPS</div><div><b>Politécnico Nuestra Señora del Perpetuo Socorro</b><small>SISERAP · Seguimiento de RA pendientes</small></div><div style="margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end"><small id="date"></small><small id="net"></small><button class="sm" id="th" onclick="tgTheme()"></button><button class="sm p" onclick="inst()">⬇ Instalar app</button></div></header>
+<div class="app"><nav id="nav" class="np"></nav><div class="col"><header class="np"><button class="sm" onclick="tgNav()" title="Contraer o expandir menú" aria-label="Contraer o expandir menú">☰</button><div class="logo">NSPS</div><div><b>Politécnico Nuestra Señora del Perpetuo Socorro</b><small>SISERAP · Seguimiento de RA pendientes</small></div><div style="margin-left:auto;display:flex;gap:8px;align-items:center;position:relative"><small id="date"></small><button class="sm" id="um" onclick="tgMenu(event)" aria-haspopup="true" aria-expanded="false" title="Perfil, año escolar y opciones"></button><div id="umenu" class="menu" hidden></div></div></header>
 <main><div class="warn np" id="warn"></div><div id="main"></div></main></div></div>
 <div id="toast" role="status"></div>
 <script>
@@ -75,107 +84,182 @@ const S=['students','ras','evs','segs','log','cfg'];
 const D={students:[],ras:[],evs:[],segs:[],log:[],cfg:[]};
 const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+let uc=0;
+const cl=x=>String(x==null?'':x).replace(/\s+/g,' ').trim();
+const ini=()=>{const w=docN().split(' ').filter(Boolean);return (w.length?Array.from(w[0])[0]+(w[1]?Array.from(w[1])[0]:''):'👤').toUpperCase()};
+const avHtml=px=>{const p=PF();return `<span class="av" style="width:${px}px;height:${px}px;font-size:${Math.round(px/2.6)}px">${p.foto&&String(p.foto).startsWith('data:image/')?`<img alt="" src="${esc(p.foto)}">`:esc(ini())}</span>`};
+function pickPhoto(i){const f=i.files&&i.files[0];if(!f)return;if(!/^image\//.test(f.type))return toast('Elija un archivo de imagen.',1);if(f.size>10e6)return toast('La imagen es demasiado grande (máximo 10 MB).',1);
+const r=new FileReader();r.onerror=()=>toast('No se pudo leer la imagen.',1);
+r.onload=()=>{const im=new Image();im.onerror=()=>toast('No se pudo abrir la imagen.',1);
+im.onload=async()=>{try{const n=256,c=document.createElement('canvas');c.width=c.height=n;const x=c.getContext('2d'),m=Math.min(im.width,im.height);x.drawImage(im,(im.width-m)/2,(im.height-m)/2,m,m,0,0,n,n);
+await put('cfg',{...PF(),id:'perfil',t:'perfil',foto:c.toDataURL('image/jpeg',.85)});lg('Actualizó la foto de perfil');toast('Foto de perfil guardada.');render()}catch(e){toast('No se pudo procesar la imagen.',1)}};im.src=r.result};r.readAsDataURL(f)}
+async function delPhoto(){const p={...PF()};delete p.foto;await put('cfg',{...p,id:'perfil',t:'perfil'});lg('Quitó la foto de perfil');toast('Foto eliminada.');render()}
+const KEYS={students:['apellidos','nombres','grado','seccion','area','asignatura','anio','docente','fecha','codigo','matricula','familia'],ras:['est','cod','desc','asig','fecha','motivo','docente','estado'],evs:['ra','tipo','desc','frec','docente','obs','criterios','res','fval'],segs:['ra','f','sit','ori','act','comp','facord','docente','res'],log:['t','a'],cfg:['t','v','cod','desc','asig','nombre','cargo','correo','tel','foto']};
+function sane(s,o){if(!o||typeof o!=='object'||!/^[\w-]{1,60}$/.test(String(o.id)))return null;const r={id:String(o.id)};if(o.demo)r.demo=1;
+for(const k of KEYS[s]){const x=o[k];if(x===undefined||x===null)continue;const v=typeof x==='string'?x:(typeof x==='number'?String(x):'');r[k]=k==='foto'?(v.startsWith('data:image/')&&v.length<400000?v:''):v.slice(0,2000)}
+if(s==='ras'){if(!ES.includes(r.estado))r.estado='Pendiente';r.hist=(Array.isArray(o.hist)?o.hist:[]).slice(0,300).map(h=>({f:String(h&&h.f||'').slice(0,10),e:ES.includes(h&&h.e)?h.e:'Pendiente',n:String(h&&h.n||'').slice(0,500)}));if(!r.hist.length)r.hist=[{f:r.fecha||'',e:r.estado,n:''}]}
+if(s==='students')for(const k of ['apellidos','nombres','grado','seccion','area','asignatura','anio','docente'])if(r[k]===undefined)r[k]='';
+return r}
+const uid=()=>Date.now().toString(36)+(++uc).toString(36)+Math.random().toString(36).slice(2,6);
 const today=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
 const fmt=d=>d?d.split('-').reverse().join('/'):'';
 const st=id=>D.students.find(s=>s.id===id)||{};
 const nm=s=>(s.apellidos||'?')+', '+(s.nombres||'');
 const dt=o=>o.demo?' <span class="tag">DEMO</span>':'';
-let edE=null,edG=null,dc=null,rst=false,draft={},nc=innerWidth<700,sgm='reg',sgi='',dp=null,DL=null,db=null,view='panel',ed=null,fl={q:'',g:'',s:'',a:'',r:'',e:''},fo={g:'',s:'',a:'',d:'',f:today(),i:''};
-const toast=(m,e)=>{const t=$('#toast');t.textContent=m;t.className='show'+(e?' er':'');clearTimeout(toast.h);toast.h=setTimeout(()=>t.className='',3500)};
+let rs='',rA='',ca='',edE=null,edG=null,dc=null,rst=false,draft={},nc=innerWidth<700,sgm='reg',sgi='',dp=null,DL=null,db=null,view='panel',ed=null,fl={q:'',g:'',s:'',a:'',r:'',e:''},fo={g:'',s:'',a:'',d:'',f:today(),i:''};
+const toast=(m,e)=>{const t=$('#toast');t.textContent=(e?'⚠ ':'✔ ')+m;t.className='show'+(e?' er':'');clearTimeout(toast.h);toast.h=setTimeout(()=>t.className='',3500)};
 function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open('siserap',2);r.onupgradeneeded=()=>S.forEach(s=>{if(!r.result.objectStoreNames.contains(s))r.result.createObjectStore(s,{keyPath:'id'})});r.onsuccess=()=>{db=r.result;res()};r.onerror=()=>rej(r.error)})}
-const put=(s,o)=>{const i=D[s].findIndex(x=>x.id===o.id);i<0?D[s].push(o):D[s][i]=o;return db?new Promise(r=>{const t=db.transaction(s,'readwrite');t.objectStore(s).put(o);t.oncomplete=r;t.onerror=r}):Promise.resolve()};
+const put=(s,o)=>{const i=D[s].findIndex(x=>x.id===o.id);i<0?D[s].push(o):D[s][i]=o;return db?new Promise(r=>{const t=db.transaction(s,'readwrite');t.objectStore(s).put(o);t.oncomplete=r;t.onerror=()=>{toast('No se pudo guardar en el navegador; haga un respaldo.',1);r()}}):Promise.resolve()};
 const lg=a=>put('log',{id:uid(),t:new Date().toISOString(),a});
 const fd=e=>{e.preventDefault();return Object.fromEntries(new FormData(e.target))};
-const f=(n,l,v='',t='text',x='')=>`<label>${l}<input name="${n}" type="${t}" value="${esc(v)}" ${x}></label>`;
-const ta=(n,l,v='',x='')=>`<label class="w">${l}<textarea name="${n}" rows="2" ${x}>${esc(v)}</textarea></label>`;
+const f=(n,l,v='',t='text',x='')=>`<label>${l}<input name="${n}" type="${t}" value="${esc(v)}" maxlength="150" ${x}></label>`;
+const ta=(n,l,v='',x='')=>`<label class="w">${l}<textarea name="${n}" rows="2" maxlength="1000" ${x}>${esc(v)}</textarea></label>`;
 const sel=(n,l,o,v='',x='')=>`<label>${l}<select name="${n}" ${x}>${o.map(p=>{const[a,b]=Array.isArray(p)?p:[p,p];return `<option value="${esc(a)}"${a===v?' selected':''}>${esc(b)}</option>`}).join('')}</select></label>`;
 const tbl=(h,r)=>`<div class="tw"><table><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr>${r.map(c=>`<tr>${c.map(x=>`<td>${x}</td>`).join('')}</tr>`).join('')||`<tr><td colspan="${h.length}">Sin registros.</td></tr>`}</table></div>`;
-const uniq=k=>[...new Set(D.students.map(s=>s[k]).filter(Boolean))].sort();
+const uniq=k=>[...new Set(ST().map(s=>s[k]).filter(Boolean))].sort();
 const dl=(id,k)=>`<datalist id="${id}">${uniq(k).map(v=>`<option value="${esc(v)}">`).join('')}</datalist>`;
 const opts=(k,v,all='Todos')=>[['',all],...uniq(k)].map(p=>{const[a,b]=Array.isArray(p)?p:[p,p];return `<option value="${esc(a)}"${a===v?' selected':''}>${esc(b)}</option>`}).join('');
 const raOpts=()=>D.ras.map(r=>[r.id,nm(st(r.est))+' · '+r.cod]);
-const csvc=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+const csvc=v=>{let x=String(v??'');if(/^[=+\-@\t\r]/.test(x))x="'"+x;return '"'+x.replace(/"/g,'""')+'"'};
 function out(t,x,fn){$('#out').innerHTML=`<div class="card"><h2>${t}</h2><textarea id="ox" rows="8" readonly>${esc(x)}</textarea><p>${fn?`<button class="p" onclick="dlf('${fn}')">⬇ Descargar archivo</button> `:''}<button onclick="$('#ox').select();document.execCommand('copy');toast('Copiado.')">Copiar al portapapeles</button></p></div>`}
 
 /* PANEL */
-function vPanel(){const c=e=>D.ras.filter(r=>r.estado===e).length;
-const k=[['Estudiantes',D.students.length],['RA pendientes',c('Pendiente')+c('Requiere seguimiento')],['RA en proceso',c('En proceso')+c('Evidencia presentada')],['RA en revisión',c('En revisión')],['RA completados',c('Completado')],['Evidencias por validar',D.evs.filter(e=>e.res==='Sin evaluar').length]];
+function vPanel(){const c=e=>RS().filter(r=>r.estado===e).length;
+const k=[['Estudiantes',ST().length],['RA pendientes',c('Pendiente')+c('Requiere seguimiento')],['RA en proceso',c('En proceso')+c('Evidencia presentada')],['RA en revisión',c('En revisión')],['RA completados',c('Completado')],['Evidencias por validar',EVS().filter(e=>e.res==='Sin evaluar').length]];
 const mx=Math.max(1,...ES.map(c));
 return `<div class="kpis">${k.map(([a,b])=>`<div class="card"><div class="n">${b}</div><div class="mu">${a}</div></div>`).join('')}</div>
 <div class="card"><h2>RA por estado</h2>${ES.map(e=>`<div class="bar"><span>${e}</span><div class="tr"><i style="width:${c(e)/mx*100}%"></i></div><b>${c(e)}</b></div>`).join('')}</div>`
-+(D.students.length?'':`<div class="card">Aún no hay datos. Registre estudiantes o <button class="sm" onclick="demo()">cargar datos de demostración</button>.</div>`)}
++(ST().length?'':`<div class="card">Aún no hay datos. Registre estudiantes o <button class="sm" onclick="demo()">cargar datos de demostración</button>.</div>`)}
 
 /* ESTUDIANTES */
-const cs=(n,l,t,v='')=>sel(n,l,[['','— Seleccione —'],...[...new Set([...D.cfg.filter(c=>c.t===t).map(c=>c.v),...(v?[v]:[])])].sort()],v);
-async function addC(t,i){const v=$('#'+i).value.trim();if(!v)return toast('Escriba el nombre antes de agregar.',1);
+const cs=(n,l,t,v='',x='')=>sel(n,l,[['','— Seleccione —'],...[...new Set([...D.cfg.filter(c=>c.t===t).map(c=>c.v),...(v?[v]:[])])].sort()],v,x);
+const ar=(t,ph,lab)=>`<input id="n_${t}" placeholder="${ph}" style="min-height:34px" onkeydown="if(event.key==='Enter'){event.preventDefault();addC('${t}','n_${t}')}"> <button type="button" class="sm" onclick="addC('${t}','n_${t}')">+ ${lab}</button>`;
+async function addC(t,i){const v=cl($('#'+i).value).slice(0,120);if(!v)return toast('Escriba el nombre antes de agregar.',1);
 if(D.cfg.some(c=>c.t===t&&c.v.toLowerCase()===v.toLowerCase()))return toast('Ya existe en la lista.',1);
-draft=Object.fromEntries(new FormData(document.querySelector('form')));draft[t==='asig'?'asignatura':'anio']=v;
+draft=Object.fromEntries(new FormData(document.querySelector('form')));draft[{asig:'asignatura',anio:'anio',doc:'docente',grado:'grado',seccion:'seccion',area:'area'}[t]]=v;
 await put('cfg',{id:uid(),t,v});lg('Agregó '+(t==='asig'?'asignatura ':'año escolar ')+v);toast('Agregado a la lista.');render()}
+const nz=x=>String(x||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+const raSelOpts=(est,ra)=>{if(!est)return '<option value="">Primero elija el estudiante</option>';const L=RS().filter(x=>x.est===est);return L.length?(L.length>1?'<option value="">— Seleccione el RA —</option>':'')+L.map(x=>`<option value="${x.id}"${x.id===ra?' selected':''}>${esc(x.cod)} · ${esc((x.desc||'').slice(0,60))}</option>`).join(''):'<option value="">Este estudiante no tiene RA asignado</option>'};
+const PKCB={ra:id=>{rs=id;rA=st(id).asignatura||rA;render()},fi:id=>{fo.i=id;render()},si:id=>{sgi=id;render()},ra2:(id,fm)=>{fm.querySelector('[name="ra"]').innerHTML=raSelOpts(id,'')}};
+const fi0=()=>{fo.i='';render()},si0=()=>{sgi='';render()};
+const pk=(name,val,k,cap)=>{const s=val?st(val):null;return `<div class="pk w"><span>${cap||'Estudiante *'}</span><input type="search" autocomplete="off" value="${s&&s.id?esc(nm(s)+' · '+s.grado+' '+s.seccion):''}" placeholder="Escriba el apellido o nombre…" oninput="pkF(this,'${k}',1)" onfocus="pkF(this,'${k}')" onblur="setTimeout(()=>{this.parentNode.querySelector('.pkl').innerHTML=''},250)"><input type="hidden"${name?` name="${name}"`:''} value="${esc(val||'')}"><div class="pkl"></div></div>`};
+function pkF(i,k,clr){const p=i.parentNode,q=nz(i.value.trim());if(clr)p.querySelector('[type=hidden]').value='';
+const R=ST().filter(s=>!q||nz(nm(s)+' '+s.grado+s.seccion).includes(q)).slice(0,8);
+p.querySelector('.pkl').innerHTML=R.map(s=>`<button type="button" class="sm" onmousedown="event.preventDefault()" onclick="pkSet(this,'${s.id}','${k}')">${esc(nm(s))} · ${esc(s.grado+' '+s.seccion)}</button>`).join('')||'<span class="mu">Sin coincidencias</span>'}
+function pkSet(b,id,k){const p=b.closest('.pk'),s=st(id);p.querySelector('[type=search]').value=nm(s)+' · '+s.grado+' '+s.seccion;p.querySelector('[type=hidden]').value=id;p.querySelector('.pkl').innerHTML='';if(PKCB[k])PKCB[k](id,p.closest('form'))}
+const raPk=ra=>{const r=RS().find(x=>x.id===ra)||{};return pk('',r.est,'ra2','Estudiante *')+`<label>RA *<select name="ra" required>${raSelOpts(r.est,ra)}</select></label>`};
+const ld=k=>(ST()[ST().length-1]||{})[k]||'';
+const cd=(n,l,v='',first='— Docente del estudiante —',x='')=>sel(n,l,[['',first],...[...new Set([...D.cfg.filter(c=>c.t==='doc').map(c=>c.v),...(v?[v]:[])])].sort()],v,x);
+/* CARGA MASIVA */
+function vBulk(){return `<div class="card" id="bulk"><h2>Agregar estudiantes en masa</h2><p class="mu">Copie las filas de Excel, Google Sheets o Word y péguelas abajo. Orden de columnas: Apellidos, Nombres, Grado, Sección. Grado y sección pueden omitirse si los elige aquí. Las listas se administran en el formulario de arriba o en «RA y asignaturas → Catálogos».</p><div class="g">${cs('b_g','Grado (por defecto)','grado')}${cs('b_s','Sección (por defecto)','seccion')}${cs('b_a','Área técnica *','area')}${cs('b_as','Asignatura','asig')}<label class="w">Tabla pegada<textarea name="b_t" rows="6" placeholder="Apellidos, Nombres, Grado, Sección (una fila por estudiante)"></textarea></label></div><p><button class="p" onclick="bulkPrev()">Vista previa</button></p><div id="bp"></div></div>`}
+function bulk(){const g=n=>document.querySelector('#bulk [name="'+n+'"]').value.trim();
+const d={grado:g('b_g'),seccion:g('b_s'),area:g('b_a'),asignatura:g('b_as'),anio:ay,docente:docN()};
+const k=x=>x.toLowerCase(),seen=new Set(ST().map(s=>k(s.apellidos+'|'+s.nombres+'|'+s.grado+'|'+s.seccion)));const R=[];
+g('b_t').split(/\r?\n/).forEach(l=>{if(!l.trim())return;const c=(l.includes('\t')?l.split('\t'):l.includes(';')?l.split(';'):l.split(',')).map(x=>cl(x.replace(/^"+|"+$/g,'')).slice(0,120));if(R.h===undefined){R.h=1;if(/^apellido/i.test(c[0])&&/^nombre/i.test(c[1]||''))return}
+const o={apellidos:c[0]||'',nombres:c[1]||'',grado:c[2]||d.grado,seccion:c[3]||d.seccion,area:d.area,asignatura:d.asignatura,anio:d.anio,docente:d.docente};
+const key=k(o.apellidos+'|'+o.nombres+'|'+o.grado+'|'+o.seccion);
+o.err=!o.apellidos||!o.nombres?'Falta apellido o nombre':!o.grado||!o.seccion?'Falta grado o sección':!o.area?'Falta el área técnica':seen.has(key)?'Ya existe (se omite)':'';
+if(!o.err)seen.add(key);R.push(o)});return R}
+function bulkPrev(){const R=bulk();const ok=R.filter(o=>!o.err).length;
+$('#bp').innerHTML=R.length?tbl(['#','Estudiante','Grado/Secc.','Estado'],R.map((o,i)=>[i+1,esc(o.apellidos+', '+o.nombres),esc(o.grado+' '+o.seccion),o.err?`<span style="color:var(--er)">${o.err}</span>`:'<b class="ok">Listo</b>']))+`<p><button class="p" onclick="bulkImp()"${ok?'':' disabled'}>Importar ${ok} estudiante(s)</button></p>`:'<p>No hay filas para importar.</p>'}
+async function bulkImp(){const R=bulk().filter(o=>!o.err);for(const o of R){const{err,...s}=o;await put('students',{id:uid(),...s,fecha:today()})}await lg('Importó '+R.length+' estudiantes');toast(R.length+' estudiantes importados.');render()}
+/* CATÁLOGO */
+function vCat(){const A=D.cfg.filter(c=>c.t==='asig').sort((a,b)=>a.v.localeCompare(b.v));if(!A.some(c=>c.v===ca))ca=(A[0]||{}).v||'';
+const bt=id=>dc===id?`<button class="sm" onclick="catDel('${id}')">Sí, eliminar</button> <button class="sm" onclick="dc=null;render()">No</button>`:`<button class="sm" onclick="dc='${id}';render()">Eliminar</button>`;
+const inp=(id,ph,t)=>`<input id="${id}" placeholder="${ph}" style="min-height:40px" onkeydown="if(event.key==='Enter')addCat('${t}','${id}')"> <button class="sm p" onclick="addCat('${t}','${id}')">+ Agregar</button>`;
+const lst=(t,ti,ph)=>`<div class="card"><h2>${ti}</h2>${inp('n_c_'+t,ph,t)}${tbl([ti,''],D.cfg.filter(c=>c.t===t&&c.v).map(c=>[esc(c.v),bt(c.id)]))}</div>`;
+return `${lst('area','Áreas técnicas','Nueva área técnica')}${lst('grado','Grados','Nuevo grado')}${lst('seccion','Secciones','Nueva sección')}<div class="card"><h2>Asignaturas</h2>${inp('nas','Nombre de la asignatura','asig')}</div>
+<div class="card"><h2>Agregar RA a una asignatura</h2>${A.length?`<label>Asignatura<select id="ra_a" onchange="ca=this.value;render()">${A.map(c=>`<option value="${esc(c.v)}"${c.v===ca?' selected':''}>${esc(c.v)}</option>`).join('')}</select></label><label style="margin-top:8px">Un RA por línea: CÓDIGO – descripción (o pegue dos columnas de Excel)<textarea id="ra_t" rows="5" placeholder="RA1 – Instala y configura redes locales"></textarea></label><p><button class="p" onclick="addRA()">Agregar RA</button></p>`:'<p class="mu">Agregue primero una asignatura.</p>'}</div>
+${A.map(a=>`<div class="card"><h2>${esc(a.v)}</h2>${tbl(['RA','Descripción',''],D.cfg.filter(c=>c.t==='ra'&&c.asig===a.v).map(c=>[esc(c.cod),esc(c.desc),bt(c.id)]))}<p>${bt(a.id)} <span class="mu">(elimina la asignatura y sus RA del catálogo)</span></p></div>`).join('')}`}
+async function addCat(t,i){const v=cl($('#'+i).value).slice(0,120);if(!v)return toast('Escriba el nombre.',1);if(D.cfg.some(c=>c.t===t&&c.v&&c.v.toLowerCase()===v.toLowerCase()))return toast('Ya existe en la lista.',1);await put('cfg',{id:uid(),t,v});lg('Agregó al catálogo: '+v);if(t==='asig')ca=v;toast('Agregado a la lista.');render()}
+async function addRA(){const a=$('#ra_a').value,L=$('#ra_t').value.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);if(!L.length)return toast('Escriba o pegue al menos un RA.',1);
+let n=D.cfg.filter(c=>c.t==='ra'&&c.asig===a).length,k=0;
+for(const l of L){let cod,desc;const p=l.split('\t');if(p.length>1){cod=p[0].trim();desc=p.slice(1).join(' ').trim()}else{const m=l.match(/^(\S{1,20})\s*(?:[–—:]|-)\s+(.+)$/);if(m){cod=m[1];desc=m[2]}else{cod='RA'+(n+1);desc=l}}
+cod=cl(cod).slice(0,40);desc=cl(desc).slice(0,300);if(!desc||!cod||D.cfg.some(c=>c.t==='ra'&&c.asig===a&&c.cod.toLowerCase()===cod.toLowerCase()))continue;await put('cfg',{id:uid(),t:'ra',asig:a,cod,desc});n++;k++}
+ca=a;await lg('Agregó '+k+' RA a '+a);toast(k+' RA agregados.');render()}
+async function catDel(id){const c=D.cfg.find(x=>x.id===id);if(!c)return;const ids=[id,...(c.t==='asig'?D.cfg.filter(x=>x.t==='ra'&&x.asig===c.v).map(x=>x.id):[])];
+for(const i of ids){D.cfg=D.cfg.filter(x=>x.id!==i);if(db)await new Promise(q=>{const t=db.transaction('cfg','readwrite');t.objectStore('cfg').delete(i);t.oncomplete=q;t.onerror=q})}
+dc=null;lg('Eliminó del catálogo: '+(c.v||c.cod));toast('Eliminado del catálogo. Los registros ya creados no cambian.');render()}
 function vEst(){const s={...(ed?st(ed):{}),...draft};
-return `<div class="card"><h2>${ed?'Editar':'Registrar'} estudiante</h2><form onsubmit="saveS(event)" class="g">${f('apellidos','Apellidos *',s.apellidos,'text','required')}${f('nombres','Nombres *',s.nombres,'text','required')}${f('grado','Grado *',s.grado,'text','required list="dg"')}${f('seccion','Sección *',s.seccion,'text','required list="ds"')}${f('area','Área técnica *',s.area,'text','required list="da"')}${cs('asignatura','Asignatura','asig',s.asignatura)}<div class="w chips"><input id="na" placeholder="Nueva asignatura" style="min-height:34px" onkeydown="if(event.key==='Enter'){event.preventDefault();addC('asig','na')}"> <button type="button" class="sm" onclick="addC('asig','na')">+ Agregar asignatura</button></div>${cs('anio','Año escolar','anio',s.anio)}<div class="w chips"><input id="nay" placeholder="Ej.: 2026-2027" style="min-height:34px" onkeydown="if(event.key==='Enter'){event.preventDefault();addC('anio','nay')}"> <button type="button" class="sm" onclick="addC('anio','nay')">+ Agregar año escolar</button></div>${f('docente','Docente responsable *',s.docente,'text','required list="dd"')}${f('fecha','Fecha de registro',s.fecha||today(),'date')}<div class="w"><button class="p">Guardar</button> ${ed?'<button type="button" onclick="ed=null;draft={};render()">Cancelar</button>':''}</div></form>${dl('dg','grado')}${dl('ds','seccion')}${dl('da','area')}${dl('dd','docente')}</div>
+return `<div class="card"><h2>${ed?'Editar':'Registrar'} estudiante</h2><form onsubmit="saveS(event)" class="g">${f('apellidos','Apellidos *',s.apellidos,'text','required')}${f('nombres','Nombres *',s.nombres,'text','required')}${cs('grado','Grado *','grado',s.grado,'required')}${cs('seccion','Sección *','seccion',s.seccion,'required')}${cs('area','Área técnica *','area',s.area,'required')}<div class="w chips">${ar('area','Nueva área técnica','Agregar área técnica')}</div><div class="w chips">${ar('grado','Nuevo grado','Agregar grado')} ${ar('seccion','Nueva sección','Agregar sección')}</div>${cs('asignatura','Asignatura','asig',s.asignatura)}<div class="w chips"><input id="na" placeholder="Nueva asignatura" style="min-height:34px" onkeydown="if(event.key==='Enter'){event.preventDefault();addC('asig','na')}"> <button type="button" class="sm" onclick="addC('asig','na')">+ Agregar asignatura</button></div>${f('fecha','Fecha de registro',s.fecha||today(),'date')}<div class="w"><button class="p">Guardar</button> ${ed?'<button type="button" onclick="ed=null;draft={};render()">Cancelar</button>':''}</div></form></div>${vBulk()}
 <div class="card"><h2>Estudiantes</h2><div class="g"><input placeholder="Buscar por nombre" value="${esc(fl.q)}" oninput="fl.q=this.value;$('#lst').innerHTML=listS()"><select onchange="fl.g=this.value;$('#lst').innerHTML=listS()">${opts('grado',fl.g,'Todos los grados')}</select><select onchange="fl.s=this.value;$('#lst').innerHTML=listS()">${opts('seccion',fl.s,'Todas las secciones')}</select><select onchange="fl.a=this.value;$('#lst').innerHTML=listS()">${opts('area',fl.a,'Todas las áreas')}</select></div><div id="lst">${listS()}</div></div>`}
 function listS(){const q=fl.q.toLowerCase();
-return tbl(['Estudiante','Grado/Secc.','Área','Asignatura','Año','RA',''],D.students.filter(s=>(!q||nm(s).toLowerCase().includes(q))&&(!fl.g||s.grado===fl.g)&&(!fl.s||s.seccion===fl.s)&&(!fl.a||s.area===fl.a)).map(s=>[esc(nm(s))+dt(s),esc(s.grado+' '+s.seccion),esc(s.area),esc(s.asignatura),esc(s.anio),D.ras.filter(x=>x.est===s.id).length,`<button class="sm" onclick="ed='${s.id}';draft={};render()">Editar</button>`]))}
-async function saveS(e){const d=fd(e);const k=x=>(x||'').trim().toLowerCase();
-if(D.students.some(s=>s.id!==ed&&k(s.apellidos)===k(d.apellidos)&&k(s.nombres)===k(d.nombres)&&k(s.grado)===k(d.grado)&&k(s.seccion)===k(d.seccion)))return toast('Ya existe un estudiante con ese nombre, grado y sección.',1);
-const o={...(ed?st(ed):{id:uid()}),...d};await put('students',o);lg((ed?'Editó':'Registró')+' estudiante '+nm(o));ed=null;draft={};toast('Estudiante guardado.');render()}
+return tbl(['Estudiante','Grado/Secc.','Área','Asignatura','RA',''],ST().filter(s=>(!q||nm(s).toLowerCase().includes(q))&&(!fl.g||s.grado===fl.g)&&(!fl.s||s.seccion===fl.s)&&(!fl.a||s.area===fl.a)).map(s=>[esc(nm(s))+dt(s),esc(s.grado+' '+s.seccion),esc(s.area),esc(s.asignatura),RS().filter(x=>x.est===s.id).length,`<button class="sm" onclick="ed='${s.id}';draft={};render()">Editar</button>`]))}
+async function saveS(e){const d=fd(e);d.apellidos=cl(d.apellidos).slice(0,120);d.nombres=cl(d.nombres).slice(0,120);if(!d.apellidos||!d.nombres)return toast('Escriba el apellido y el nombre.',1);const k=x=>(x||'').trim().toLowerCase();
+if(ST().some(s=>s.id!==ed&&k(s.apellidos)===k(d.apellidos)&&k(s.nombres)===k(d.nombres)&&k(s.grado)===k(d.grado)&&k(s.seccion)===k(d.seccion)))return toast('Ya existe un estudiante con ese nombre, grado y sección.',1);
+const o={...(ed?st(ed):{id:uid()}),...d};if(!ed){o.anio=ay;o.docente=docN()}await put('students',o);lg((ed?'Editó':'Registró')+' estudiante '+nm(o));ed=null;draft={};toast('Estudiante guardado.');render()}
 
 /* RA */
-function vRA(){return `<div class="card"><h2>Asignar RA pendiente</h2>${D.students.length?`<form onsubmit="saveR(event)" class="g">${sel('est','Estudiante *',D.students.map(s=>[s.id,nm(s)+' · '+s.grado+s.seccion]))}${f('cod','Identificación del RA *','','text','required')}${ta('desc','Descripción del RA *','','required')}${f('fecha','Fecha de identificación',today(),'date')}${ta('motivo','Motivo u observación académica')}${f('docente','Docente responsable (si difiere del estudiante)')}${sel('estado','Estado',ES)}<div class="w"><button class="p">Guardar</button></div></form>`:'<p>Primero registre estudiantes.</p>'}</div>
+let rtab='asig';
+function vRAx(){return `<div class="card np"><button class="${rtab==='asig'?'on':''}" onclick="rtab='asig';render()">Asignar RA pendiente</button> <button class="${rtab==='cat'?'on':''}" onclick="rtab='cat';render()">Catálogos: asignaturas, RA, áreas, grados</button></div>`+(rtab==='cat'?vCat():vRA())}
+function vRA(){if(!st(rs).id)rs='';const A=D.cfg.filter(c=>c.t==='asig').map(c=>c.v).sort();if(!A.includes(rA))rA=A.includes(st(rs).asignatura)?st(rs).asignatura:(A[0]||'');const CR=D.cfg.filter(c=>c.t==='ra'&&c.asig===rA);
+return `<div class="card"><h2>Asignar RA pendiente</h2>${ST().length?`<form onsubmit="saveR(event)" class="g">${pk('est',rs,'ra','Estudiante *')}${sel('asig','Asignatura',A,rA,'onchange="rA=this.value;render()"')}<div class="w"><div class="mu">Marque los RA pendientes de la asignatura</div>${CR.map(c=>`<label style="flex-direction:row;gap:8px;color:var(--tx);margin:6px 0"><input type="checkbox" name="cra" value="${c.id}" style="min-height:20px;min-width:20px"><span><b>${esc(c.cod)}</b> ${esc(c.desc)}</span></label>`).join('')||'<p class="mu">Esta asignatura no tiene RA. <button type="button" class="sm" onclick="rtab=\'cat\';render()">Agregar RA al catálogo</button></p>'}</div><details class="w"><summary>Escribir un RA que no está en el catálogo</summary><div class="g">${f('cod','Identificación del RA')}${ta('desc','Descripción del RA')}</div></details>${f('fecha','Fecha de identificación',today(),'date')}${ta('motivo','Motivo u observación académica')}${sel('estado','Estado',ES)}<div class="w"><button class="p">Guardar</button></div></form>`:'<p>Primero registre estudiantes.</p>'}</div>
 <div class="card"><h2>RA registrados</h2><div class="g"><input placeholder="Buscar" value="${esc(fl.r)}" oninput="fl.r=this.value;$('#lst').innerHTML=listR()"><select onchange="fl.e=this.value;$('#lst').innerHTML=listR()">${['',...ES].map(x=>`<option value="${x}"${x===fl.e?' selected':''}>${x||'Todos los estados'}</option>`).join('')}</select></div><div id="lst">${listR()}</div></div>`}
 function listR(){const q=fl.r.toLowerCase();
-return tbl(['Estudiante','RA','Estado e historial'],D.ras.filter(r=>(!q||(nm(st(r.est))+r.cod+r.desc).toLowerCase().includes(q))&&(!fl.e||r.estado===fl.e)).map(r=>{const s=st(r.est);
+return tbl(['Estudiante','RA','Estado e historial'],RS().filter(r=>(!q||(nm(st(r.est))+r.cod+r.desc).toLowerCase().includes(q))&&(!fl.e||r.estado===fl.e)).map(r=>{const s=st(r.est);
 return [esc(nm(s))+dt(r)+'<br><span class="mu">'+esc(s.grado+' '+s.seccion)+'</span>','<b>'+esc(r.cod)+'</b><br>'+esc(r.desc),`<select onchange="setE('${r.id}',this.value)">${ES.map(x=>`<option${x===r.estado?' selected':''}>${x}</option>`).join('')}</select><details><summary>Historial (${r.hist.length})</summary>${r.hist.map(h=>`<div class="mu">${fmt(h.f)} · ${esc(h.e)} ${esc(h.n)}</div>`).join('')}</details>`]}))}
-async function saveR(e){const d=fd(e);const s=st(d.est);const r={id:uid(),...d,desc:d.desc.trim(),docente:d.docente.trim()||s.docente,hist:[{f:d.fecha,e:d.estado,n:'RA identificado'}]};await put('ras',r);lg('Asignó RA '+r.cod+' a '+nm(s));toast('RA guardado.');render()}
-async function setE(id,e){const r=D.ras.find(x=>x.id===id);if(r.estado===e)return;r.estado=e;r.hist.push({f:today(),e,n:''});await put('ras',r);lg('RA '+r.cod+' pasó a '+e);toast('Estado actualizado; el historial se conserva.');render()}
+async function saveR(e){e.preventDefault();const fm=new FormData(e.target),d=Object.fromEntries(fm),s=st(d.est);if(!s.id)return toast('Escriba el nombre y elija un estudiante de la lista.',1);
+const it=fm.getAll('cra').map(id=>D.cfg.find(c=>c.id===id)).filter(Boolean).map(c=>({cod:c.cod,desc:c.desc,asig:c.asig}));
+if((d.cod||'').trim()&&(d.desc||'').trim())it.push({cod:cl(d.cod).slice(0,40),desc:cl(d.desc).slice(0,300),asig:d.asig||''});
+if(!it.length)return toast('Marque al menos un RA del catálogo o escriba uno.',1);
+let n=0;for(const x of it){if(RS().some(r=>r.est===s.id&&r.cod===x.cod&&(r.asig||'')===x.asig))continue;await put('ras',{id:uid(),est:s.id,cod:x.cod,desc:x.desc,asig:x.asig,fecha:d.fecha,motivo:d.motivo,docente:d.docente||s.docente,estado:d.estado,hist:[{f:d.fecha,e:d.estado,n:'RA identificado'}]});n++}
+await lg('Asignó '+n+' RA a '+nm(s));toast(n?n+' RA asignados.':'Esos RA ya estaban asignados.');render()}
+async function setE(id,e){const r=RS().find(x=>x.id===id);if(r.estado===e)return;r.estado=e;r.hist.push({f:today(),e,n:''});await put('ras',r);lg('RA '+r.cod+' pasó a '+e);toast('Estado actualizado; el historial se conserva.');render()}
 
 /* EVIDENCIAS */
-function vEvi(){const e=edE?D.evs.find(x=>x.id===edE)||{}:{};return `<div class="card"><h2>${edE?'Editar':'Registrar'} evidencia</h2>${D.ras.length?`<form onsubmit="saveEv(event)" class="g">${sel('ra','Estudiante y RA *',raOpts(),e.ra)}${sel('tipo','Tipo de evidencia',['Trabajo escrito','Proyecto','Práctica de taller','Examen','Portafolio','Otra'],e.tipo)}${ta('desc','Descripción *',e.desc,'required')}${f('frec','Fecha de recepción',e.frec||today(),'date')}${f('docente','Docente responsable',e.docente)}${ta('obs','Observaciones',e.obs)}${ta('criterios','Criterios de evaluación del RA verificados (obligatorio para validar)',e.criterios)}${sel('res','Resultado de la evaluación',['Sin evaluar','Logrado','No logrado'],e.res)}${f('fval','Fecha de validación',e.fval,'date')}<div class="w"><button class="p">Guardar</button>${edE?' <button type="button" onclick="edE=null;render()">Cancelar</button>':''}</div></form><p class="mu">Adjuntar archivos requiere el modo institucional (fase posterior).</p>`:'<p>Primero asigne un RA.</p>'}</div>
-<div class="card"><h2>Evidencias</h2>${tbl(['Estudiante / RA','Evidencia','Recibida','Estado',''],D.evs.slice().reverse().map(v=>{const r=D.ras.find(x=>x.id===v.ra)||{};return [esc(nm(st(r.est)))+'<br>'+esc(r.cod),esc(v.tipo)+'<br>'+esc(v.desc),fmt(v.frec),v.res==='Sin evaluar'?'Recibida':'<b class="ok">Validada</b> · '+esc(v.res)+'<br>'+fmt(v.fval),acts('ev',v.id)]}))}</div>`}
-async function saveEv(e){const d=fd(e);const r=D.ras.find(x=>x.id===d.ra);
+function vEvi(){const e=edE?EVS().find(x=>x.id===edE)||{}:{};return `<div class="card"><h2>${edE?'Editar':'Registrar'} evidencia</h2>${RS().length?`<form onsubmit="saveEv(event)" class="g">${raPk(e.ra)}${sel('tipo','Tipo de evidencia',['Trabajo escrito','Proyecto','Práctica de taller','Examen','Portafolio','Otra'],e.tipo)}${ta('desc','Descripción *',e.desc,'required')}${f('frec','Fecha de recepción',e.frec||today(),'date')}${ta('obs','Observaciones',e.obs)}${ta('criterios','Criterios de evaluación del RA verificados (obligatorio para validar)',e.criterios)}${sel('res','Resultado de la evaluación',['Sin evaluar','Logrado','No logrado'],e.res)}${f('fval','Fecha de validación',e.fval,'date')}<div class="w"><button class="p">Guardar</button>${edE?' <button type="button" onclick="edE=null;render()">Cancelar</button>':''}</div></form><p class="mu">Adjuntar archivos requiere el modo institucional (fase posterior).</p>`:'<p>Primero asigne un RA.</p>'}</div>
+<div class="card"><h2>Evidencias</h2>${tbl(['Estudiante / RA','Evidencia','Recibida','Estado',''],EVS().slice().reverse().map(v=>{const r=RS().find(x=>x.id===v.ra)||{};return [esc(nm(st(r.est)))+'<br>'+esc(r.cod),esc(v.tipo)+'<br>'+esc(v.desc),fmt(v.frec),v.res==='Sin evaluar'?'Recibida':'<b class="ok">Validada</b> · '+esc(v.res)+'<br>'+fmt(v.fval),acts('ev',v.id)]}))}</div>`}
+async function saveEv(e){const d=fd(e);const r=RS().find(x=>x.id===d.ra);
 if(d.res!=='Sin evaluar'&&(!d.criterios.trim()||!d.fval))return toast('Para validar indique los criterios verificados y la fecha de validación.',1);
-d.docente=d.docente.trim()||st(r.est).docente;const was=edE;await put('evs',{...(was?D.evs.find(x=>x.id===was):{id:uid()}),...d});lg((was?'Editó evidencia de ':'Evidencia registrada para ')+r.cod);
+d.docente=docN()||st(r.est).docente;const was=edE;await put('evs',{...(was?EVS().find(x=>x.id===was):{id:uid()}),...d});lg((was?'Editó evidencia de ':'Evidencia registrada para ')+r.cod);
 if(!was&&['Pendiente','En proceso','Requiere seguimiento'].includes(r.estado)){r.estado='Evidencia presentada';r.hist.push({f:d.frec,e:r.estado,n:'Evidencia recibida'});await put('ras',r)}
 edE=null;toast('Evidencia guardada.');render()}
 
 /* SEGUIMIENTO */
-function vSeg(){const g=edG?D.segs.find(x=>x.id===edG)||{}:{};return `<div class="card np"><button class="${sgm==='reg'?'on':''}" onclick="sgm='reg';render()">Registrar</button> <button class="${sgm==='inf'?'on':''}" onclick="sgm='inf';render()">Informe imprimible</button></div>`+(sgm==='inf'?vSegInf():`<div class="card"><h2>${edG?'Editar':'Registrar'} seguimiento pedagógico</h2><p class="mu">Solo información académica. No incluya diagnósticos ni datos psicológicos.</p>${D.ras.length?`<form onsubmit="saveSg(event)" class="g">${sel('ra','Estudiante y RA *',raOpts(),g.ra)}${f('f','Fecha de seguimiento',g.f||today(),'date')}${ta('sit','Situación identificada *',g.sit,'required')}${ch('sit')}${ta('ori','Orientación ofrecida',g.ori)}${ch('ori')}${ta('act','Actividad de recuperación propuesta',g.act)}${ch('act')}${ta('comp','Compromiso del estudiante',g.comp)}${ch('comp')}${f('facord','Fecha acordada para presentar evidencias',g.facord,'date')}<div class="w chips">${[3,7,14].map(n=>`<button type="button" class="chip" onclick="qd(${n})">+${n} días</button>`).join('')}</div>${f('docente','Docente responsable',g.docente)}${ta('res','Resultado del seguimiento / observaciones',g.res)}${ch('res')}<div class="w"><button class="p">Guardar</button>${edG?' <button type="button" onclick="edG=null;render()">Cancelar</button>':''}</div></form>`:'<p>Primero asigne un RA.</p>'}</div>
-<div class="card"><h2>Historial de actuaciones</h2>${tbl(['Fecha','Estudiante / RA','Actuación',''],D.segs.slice().sort((a,b)=>b.f.localeCompare(a.f)).map(v=>{const r=D.ras.find(x=>x.id===v.ra)||{};return [fmt(v.f)+dt(v),esc(nm(st(r.est)))+'<br>'+esc(r.cod),`<b>Situación:</b> ${esc(v.sit)}<br>${v.ori?'<b>Orientación:</b> '+esc(v.ori)+'<br>':''}${v.act?'<b>Actividad:</b> '+esc(v.act)+'<br>':''}${v.facord?'<b>Entrega acordada:</b> '+fmt(v.facord)+'<br>':''}${esc(v.res)}`,acts('sg',v.id)]}))}</div>`)}
+function vSeg(){const g=edG?SGS().find(x=>x.id===edG)||{}:{};return `<div class="card np"><button class="${sgm==='reg'?'on':''}" onclick="sgm='reg';render()">Registrar</button> <button class="${sgm==='inf'?'on':''}" onclick="sgm='inf';render()">Informe imprimible</button></div>`+(sgm==='inf'?vSegInf():`<div class="card"><h2>${edG?'Editar':'Registrar'} seguimiento pedagógico</h2><p class="mu">Solo información académica. No incluya diagnósticos ni datos psicológicos.</p>${RS().length?`<form onsubmit="saveSg(event)" class="g">${raPk(g.ra)}${f('f','Fecha de seguimiento',g.f||today(),'date')}${ta('sit','Situación identificada *',g.sit,'required')}${ch('sit')}${ta('ori','Orientación ofrecida',g.ori)}${ch('ori')}${ta('act','Actividad de recuperación propuesta',g.act)}${ch('act')}${ta('comp','Compromiso del estudiante',g.comp)}${ch('comp')}${f('facord','Fecha acordada para presentar evidencias',g.facord,'date')}<div class="w chips">${[3,7,14].map(n=>`<button type="button" class="chip" onclick="qd(${n})">+${n} días</button>`).join('')}</div>${ta('res','Resultado del seguimiento / observaciones',g.res)}${ch('res')}<div class="w"><button class="p">Guardar</button>${edG?' <button type="button" onclick="edG=null;render()">Cancelar</button>':''}</div></form>`:'<p>Primero asigne un RA.</p>'}</div>
+<div class="card"><h2>Historial de actuaciones</h2>${tbl(['Fecha','Estudiante / RA','Actuación',''],SGS().slice().sort((a,b)=>b.f.localeCompare(a.f)).map(v=>{const r=RS().find(x=>x.id===v.ra)||{};return [fmt(v.f)+dt(v),esc(nm(st(r.est)))+'<br>'+esc(r.cod),`<b>Situación:</b> ${esc(v.sit)}<br>${v.ori?'<b>Orientación:</b> '+esc(v.ori)+'<br>':''}${v.act?'<b>Actividad:</b> '+esc(v.act)+'<br>':''}${v.facord?'<b>Entrega acordada:</b> '+fmt(v.facord)+'<br>':''}${esc(v.res)}`,acts('sg',v.id)]}))}</div>`)}
 const SUG={sit:['No entregó la evidencia','Entregó evidencia incompleta','No asistió a las sesiones de recuperación','Dificultad con los contenidos prácticos','Necesita más tiempo'],ori:['Repasar la guía de la unidad','Tutoría en horario de taller','Revisar los criterios de evaluación','Trabajar con material de apoyo'],act:['Repetir la práctica','Entregar un trabajo escrito','Presentar un proyecto corto','Ejercicios de refuerzo'],comp:['Entregar en la fecha acordada','Asistir a las tutorías','Pedir ayuda cuando la necesite'],res:['Entregó la evidencia','No entregó; se reprograma','Evidencia en revisión','Logró el RA']};
 const ch=n=>`<div class="w chips">${SUG[n].map(t=>`<button type="button" class="chip" onclick="addS('${n}',this.textContent)">${t}</button>`).join('')}</div>`;
 function addS(n,t){const e=document.querySelector('form [name="'+n+'"]');const v=e.value.trim();e.value=v?v.replace(/[.;]$/,'')+'; '+t:t;e.focus()}
 function qd(n){document.querySelector('form [name="facord"]').value=new Date(Date.now()-new Date().getTimezoneOffset()*6e4+n*864e5).toISOString().slice(0,10)}
-function vSegInf(){const one=sgi?st(sgi):null;const L=D.segs.map(v=>{const r=D.ras.find(x=>x.id===v.ra)||{};return {v,r,s:st(r.est)}}).filter(x=>!sgi||x.s.id===sgi).sort((a,b)=>a.v.f.localeCompare(b.v.f));
-return `<div class="card np"><h2>Informe de seguimiento</h2><label>Alcance<select onchange="sgi=this.value;render()"><option value="">General (todos los estudiantes)</option>${D.students.map(s=>`<option value="${s.id}"${sgi===s.id?' selected':''}>Individual: ${esc(nm(s))}</option>`).join('')}</select></label><p><button class="p" onclick="window.print()">Imprimir / Guardar como PDF</button></p></div>
+function vSegInf(){const one=sgi?st(sgi):null;const L=SGS().map(v=>{const r=RS().find(x=>x.id===v.ra)||{};return {v,r,s:st(r.est)}}).filter(x=>!sgi||x.s.id===sgi).sort((a,b)=>a.v.f.localeCompare(b.v.f));
+return `<div class="card np"><h2>Informe de seguimiento</h2>${pk('',sgi,'si','Un solo estudiante (opcional)')}${sgi?'<p><button class="sm" onclick="si0()">Ver informe general</button></p>':'<p class="mu">Ahora se muestra el informe general. Escriba un nombre para ver uno solo.</p>'}<p><button class="p" onclick="window.print()">Imprimir / Guardar como PDF</button></p></div>
 <div class="tw"><div id="sheet"><div class="hd"><div class="lg">NSPS</div><div><b>POLITÉCNICO NUESTRA SEÑORA DEL PERPETUO SOCORRO</b><span>Base Área de San Isidro, Santo Domingo Este</span></div></div><h3>INFORME DE SEGUIMIENTO PEDAGÓGICO${one?' INDIVIDUAL':''}</h3>
-<div class="idg"><div>Fecha de impresión<b>${fmt(today())}</b></div><div>Alcance<b>${one?esc(nm(one)):'General'}</b></div>${one?`<div>Grado y sección<b>${esc(one.grado+' '+one.seccion)}</b></div><div>Área técnica<b>${esc(one.area)}</b></div><div>Asignatura<b>${esc(one.asignatura)}</b></div><div>Año escolar<b>${esc(one.anio)}</b></div>`:''}</div>
+<div class="idg"><div>Fecha de impresión<b>${fmt(today())}</b></div><div>Alcance<b>${one?esc(nm(one)):'General'}</b></div><div>Docente<b>${esc(docN())}</b></div><div>Año escolar<b>${esc(ay)}</b></div>${one?`<div>Grado y sección<b>${esc(one.grado+' '+one.seccion)}</b></div><div>Área técnica<b>${esc(one.area)}</b></div><div>Asignatura<b>${esc(one.asignatura)}</b></div>`:''}</div>
 <table class="sq"><thead><tr><th>Fecha</th>${one?'':'<th>Estudiante</th>'}<th>RA</th><th>Situación y orientación</th><th>Actividad y compromiso</th><th>Entrega / resultado</th></tr></thead><tbody>${L.map(({v,r,s})=>`<tr><td>${fmt(v.f)}</td>${one?'':`<td>${esc(nm(s))}</td>`}<td>${esc(r.cod)}</td><td>${esc(v.sit)}${v.ori?'<br>'+esc(v.ori):''}</td><td>${esc(v.act)}${v.comp?'<br>'+esc(v.comp):''}</td><td>${v.facord?fmt(v.facord)+'<br>':''}${esc(v.res)}</td></tr>`).join('')||'<tr><td colspan="6">Sin seguimientos registrados.</td></tr>'}</tbody></table>
 <div class="sg"><div>Firma del profesor</div><div>Firma del Departamento de Psicología</div><div>Firma de Coordinación Académica</div></div>
 <div class="ft"><span>SISERAP · Informe de seguimiento pedagógico</span><span>Fecha del documento: ${fmt(today())}</span></div></div></div>`}
 const acts=(k,id)=>dc===k+id?`<button class="sm" onclick="del('${k}','${id}')">Sí, eliminar</button> <button class="sm" onclick="dc=null;render()">No</button>`:`<button class="sm" onclick="${k==='ev'?`edE='${id}'`:`edG='${id}';sgm='reg'`};dc=null;render();scrollTo(0,0)">Editar</button> <button class="sm" onclick="dc='${k}${id}';render()">Eliminar</button>`;
-async function del(k,id){const s=k==='ev'?'evs':'segs';const o=D[s].find(x=>x.id===id)||{};const r=D.ras.find(x=>x.id===o.ra);D[s]=D[s].filter(x=>x.id!==id);if(db)await new Promise(q=>{const t=db.transaction(s,'readwrite');t.objectStore(s).delete(id);t.oncomplete=q;t.onerror=q});dc=null;if(edE===id)edE=null;if(edG===id)edG=null;lg((k==='ev'?'Eliminó evidencia':'Eliminó seguimiento')+(r?' de '+r.cod:''));toast('Registro eliminado.');render()}
+async function del(k,id){const s=k==='ev'?'evs':'segs';const o=D[s].find(x=>x.id===id)||{};const r=RS().find(x=>x.id===o.ra);D[s]=D[s].filter(x=>x.id!==id);if(db)await new Promise(q=>{const t=db.transaction(s,'readwrite');t.objectStore(s).delete(id);t.oncomplete=q;t.onerror=q});dc=null;if(edE===id)edE=null;if(edG===id)edG=null;lg((k==='ev'?'Eliminó evidencia':'Eliminó seguimiento')+(r?' de '+r.cod:''));toast('Registro eliminado.');render()}
 async function resetAll(){for(const s of S){D[s]=[];if(db)await new Promise(q=>{const t=db.transaction(s,'readwrite');t.objectStore(s).clear();t.oncomplete=q;t.onerror=q})}
-rst=false;edE=edG=dc=ed=null;draft={};fl={q:'',g:'',s:'',a:'',r:'',e:''};fo={g:'',s:'',a:'',d:'',f:today(),i:''};sgi='';sgm='reg';await lg('Reinició la aplicación');toast('Aplicación reiniciada.');go('panel')}
-async function saveSg(e){const d=fd(e);const r=D.ras.find(x=>x.id===d.ra);d.docente=d.docente.trim()||st(r.est).docente;const was=edG;await put('segs',{...(was?D.segs.find(x=>x.id===was):{id:uid()}),...d});edG=null;lg((was?'Editó seguimiento de ':'Seguimiento registrado para ')+r.cod);toast('Seguimiento guardado.');render()}
+rst=false;edE=edG=dc=ed=null;draft={};fl={q:'',g:'',s:'',a:'',r:'',e:''};fo={g:'',s:'',a:'',d:'',f:today(),i:''};sgi='';sgm='reg';ay='';await initYear();await lg('Reinició la aplicación');toast('Aplicación reiniciada.');go('panel')}
+async function saveSg(e){const d=fd(e);const r=RS().find(x=>x.id===d.ra);d.docente=docN()||st(r.est).docente;const was=edG;await put('segs',{...(was?SGS().find(x=>x.id===was):{id:uid()}),...d});edG=null;lg((was?'Editó seguimiento de ':'Seguimiento registrado para ')+r.cod);toast('Seguimiento guardado.');render()}
 
 /* FORMULARIO */
 const eAt=(r,d)=>{const h=r.hist.filter(x=>x.f<=d);return h.length?h[h.length-1].e:null};
-function rowsF(){return D.ras.map(r=>({r,s:st(r.est)})).filter(({r,s})=>{const e=eAt(r,fo.f);return e&&e!=='Completado'&&(fo.i?s.id===fo.i:(!fo.g||s.grado===fo.g)&&(!fo.s||s.seccion===fo.s)&&(!fo.a||s.area===fo.a)&&(!fo.d||s.docente===fo.d))}).sort((a,b)=>nm(a.s).localeCompare(nm(b.s)))}
-function vForm(){return `<div class="card np"><h2>Generar formulario</h2><div class="g"><label>Estudiante (individual)<select onchange="fo.i=this.value;render()"><option value="">Grupal</option>${D.students.map(s=>`<option value="${s.id}"${fo.i===s.id?' selected':''}>${esc(nm(s))}</option>`).join('')}</select></label><label>Grado<select onchange="fo.g=this.value;render()">${opts('grado',fo.g)}</select></label><label>Sección<select onchange="fo.s=this.value;render()">${opts('seccion',fo.s)}</select></label><label>Área técnica<select onchange="fo.a=this.value;render()">${opts('area',fo.a)}</select></label><label>Docente<select onchange="fo.d=this.value;render()">${opts('docente',fo.d)}</select></label>${f('f','Fecha del formulario (también para históricos)',fo.f,'date','onchange="fo.f=this.value||today();render()"')}</div><p><button class="p" onclick="window.print()">Imprimir / Guardar como PDF</button></p><p class="mu">La firma del estudiante queda en blanco. Un formulario con fecha anterior se calcula con el historial y no modifica datos.</p></div>
+function rowsF(){const ok=s=>fo.i?s.id===fo.i:(!fo.g||s.grado===fo.g)&&(!fo.s||s.seccion===fo.s)&&(!fo.a||s.area===fo.a)&&(!fo.as||s.asignatura===fo.as);
+const R=RS().map(r=>({r,s:st(r.est)})).filter(({r,s})=>{const e=eAt(r,fo.f);return e&&e!=='Completado'&&ok(s)});
+if(fo.w!==0)ST().filter(s=>ok(s)&&!RS().some(r=>r.est===s.id)).forEach(s=>R.push({r:{cod:'',desc:''},s}));
+return R.sort((a,b)=>nm(a.s).localeCompare(nm(b.s)))}
+function vForm(){const n=rowsF().length;
+return `<div class="card np"><h2>Generar formulario</h2>${pk('',fo.i,'fi','Un solo estudiante (opcional)')}${fo.i?'<p><button class="sm" onclick="fi0()">Quitar selección y volver al formulario grupal</button></p>':`<div class="g"><label>Grado<select onchange="fo.g=this.value;render()">${opts('grado',fo.g)}</select></label><label>Sección<select onchange="fo.s=this.value;render()">${opts('seccion',fo.s)}</select></label><label>Área técnica<select onchange="fo.a=this.value;render()">${opts('area',fo.a)}</select></label><label>Asignatura<select onchange="fo.as=this.value;render()">${opts('asignatura',fo.as,'Todas')}</select></label></div>`}
+<div class="g" style="margin-top:8px">${f('f','Fecha del formulario (también para históricos)',fo.f,'date','onchange="fo.f=this.value||today();render()"')}<label style="flex-direction:row;gap:8px;align-items:center;color:var(--tx)"><input type="checkbox" ${fo.w!==0?'checked':''} onchange="fo.w=this.checked?1:0;render()" style="min-height:20px;min-width:20px">Incluir estudiantes que aún no tienen RA registrado (RA en blanco para escribir a mano)</label></div>
+<p class="mu">${n} fila(s) en el formulario.${ST().length?(n?'':' No hay estudiantes con estos filtros.'):' Registre estudiantes primero.'}</p><p><button class="p" onclick="window.print()">Imprimir / Guardar como PDF</button></p><p class="mu">La firma del estudiante queda en blanco. Un formulario con fecha anterior se calcula con el historial y no modifica datos.</p></div>
 <div class="tw">${sheet()}</div>`}
 function sheet(){const R=rowsF();const u=k=>[...new Set(R.map(x=>x.s[k]).filter(Boolean))].join(', ');
 const gs=[...new Set(R.map(x=>x.s.grado+' '+x.s.seccion))].join(', ');const n=Math.max(14,R.length);let b='';
-for(let i=0;i<n;i++){const x=R[i];b+=`<tr><td>${i+1}</td><td>${x?esc(x.s.apellidos):''}</td><td>${x?esc(x.s.nombres):''}</td><td>${x?esc(x.s.grado+' '+x.s.seccion):''}</td><td>${x?esc(x.r.cod+' – '+x.r.desc):''}</td><td></td></tr>`}
+for(let i=0;i<n;i++){const x=R[i];b+=`<tr><td>${i+1}</td><td>${x?esc(x.s.apellidos):''}</td><td>${x?esc(x.s.nombres):''}</td><td>${x?esc(x.s.grado+' '+x.s.seccion):''}</td><td>${x?esc(x.r.cod?(x.r.asig?x.r.asig+': ':'')+x.r.cod+' – '+x.r.desc:''):''}</td><td></td></tr>`}
 return `<div id="sheet"><div class="hd"><div class="lg">NSPS</div><div><b>POLITÉCNICO NUESTRA SEÑORA DEL PERPETUO SOCORRO</b><span>Base Área de San Isidro, Santo Domingo Este</span></div></div><h3>ESTUDIANTES CON RESULTADOS DE APRENDIZAJE PENDIENTES DE COMPLETAR</h3>
-<div class="idg"><div>Fecha<b>${fmt(fo.f)}</b></div><div>Docente responsable<b>${esc(fo.d||u('docente'))}</b></div><div>Grado y sección<b>${esc(gs)}</b></div><div>Área técnica<b>${esc(fo.a||u('area'))}</b></div><div>Asignatura<b>${esc(u('asignatura'))}</b></div><div>Año escolar<b>${esc(u('anio'))}</b></div></div>
+<div class="idg"><div>Fecha<b>${fmt(fo.f)}</b></div><div>Docente responsable<b>${esc(docN()||u('docente'))}</b></div><div>Grado y sección<b>${esc(gs)}</b></div><div>Área técnica<b>${esc(fo.a||u('area'))}</b></div><div>Asignatura<b>${esc(u('asignatura'))}</b></div><div>Año escolar<b>${esc(ay)}</b></div></div>
 <table><thead><tr><th>No.</th><th>Apellidos</th><th>Nombres</th><th>Grado / Sección</th><th>Resultado de Aprendizaje pendiente</th><th>Firma del estudiante</th></tr></thead><tbody>${b}</tbody></table>
 <div class="sg"><div>Firma del profesor</div><div>Firma del Departamento de Psicología</div><div>Firma de Coordinación Académica</div></div>
 <div class="ft"><span>SISERAP · Formulario de RA pendientes</span><span>Fecha del documento: ${fmt(fo.f)}</span></div></div>`}
 
 /* INFORMES */
-function vInf(){const R=infRows();return `<div class="card"><h2>Informe de RA</h2><div class="g"><select onchange="fl.e=this.value;render()">${['',...ES].map(x=>`<option value="${x}"${x===fl.e?' selected':''}>${x||'Todos los estados'}</option>`).join('')}</select><select onchange="fl.g=this.value;render()">${opts('grado',fl.g,'Todos los grados')}</select><select onchange="fl.a=this.value;render()">${opts('area',fl.a,'Todas las áreas')}</select></div><p><b>${R.length}</b> RA en el informe. <button class="sm" onclick="csv()">Ver como CSV</button></p>${tbl(['Estudiante','Grado/Secc.','Área','RA','Estado'],R.map(({r,s})=>[esc(nm(s)),esc(s.grado+' '+s.seccion),esc(s.area),esc(r.cod),esc(r.estado)]))}</div><div id="out"></div>`}
-const infRows=()=>D.ras.map(r=>({r,s:st(r.est)})).filter(({r,s})=>(!fl.e||r.estado===fl.e)&&(!fl.g||s.grado===fl.g)&&(!fl.a||s.area===fl.a));
+let im='form';
+function vInf(){return `<div class="card np"><button class="${im==='form'?'on':''}" onclick="im='form';render()">Formulario de RA pendientes</button> <button class="${im==='seg'?'on':''}" onclick="im='seg';render()">Informe de seguimiento</button> <button class="${im==='list'?'on':''}" onclick="im='list';render()">Listado de RA y CSV</button></div>`+(im==='form'?vForm():im==='seg'?vSegInf():vInfList())}
+function vInfList(){const R=infRows();return `<div class="card"><h2>Informe de RA</h2><div class="g"><select onchange="fl.e=this.value;render()">${['',...ES].map(x=>`<option value="${x}"${x===fl.e?' selected':''}>${x||'Todos los estados'}</option>`).join('')}</select><select onchange="fl.g=this.value;render()">${opts('grado',fl.g,'Todos los grados')}</select><select onchange="fl.a=this.value;render()">${opts('area',fl.a,'Todas las áreas')}</select></div><p><b>${R.length}</b> RA en el informe. <button class="sm" onclick="csv()">Ver como CSV</button></p>${tbl(['Estudiante','Grado/Secc.','Área','RA','Estado'],R.map(({r,s})=>[esc(nm(s)),esc(s.grado+' '+s.seccion),esc(s.area),esc(r.cod),esc(r.estado)]))}</div><div id="out"></div>`}
+const infRows=()=>RS().map(r=>({r,s:st(r.est)})).filter(({r,s})=>(!fl.e||r.estado===fl.e)&&(!fl.g||s.grado===fl.g)&&(!fl.a||s.area===fl.a));
 function csv(){out('CSV del informe',[['Apellidos','Nombres','Grado','Sección','Área','Docente','RA','Descripción','Estado','Fecha']].concat(infRows().map(({r,s})=>[s.apellidos,s.nombres,s.grado,s.seccion,s.area,r.docente,r.cod,r.desc,r.estado,r.fecha])).map(l=>l.map(csvc).join(',')).join('\n'),'siserap-informe.csv')}
 
 /* RESPALDO */
@@ -186,36 +270,79 @@ function vResp(){return `<div class="card"><h2>Instalar como aplicación</h2><ul
 function readF(i){const r=new FileReader();r.onload=()=>restore(r.result);r.readAsText(i.files[0])}
 async function restore(t){try{const j=JSON.parse(t);if(j.app!=='SISERAP')throw 0;
 for(const s of S){D[s]=[];if(db)await new Promise(r=>{const x=db.transaction(s,'readwrite');x.objectStore(s).clear();x.oncomplete=r})}
-for(const s of S)for(const o of (Array.isArray(j[s])?j[s]:[]))if(o&&o.id)await put(s,o);
-await lg('Restauró un respaldo');toast('Respaldo restaurado.');render()}catch{toast('El texto no es un respaldo válido de SISERAP.',1)}}
+for(const s of S)for(const o0 of (Array.isArray(j[s])?j[s]:[])){const o=sane(s,o0);if(o)await put(s,o)}
+await initYear();await lg('Restauró un respaldo');toast('Respaldo restaurado.');render()}catch{toast('El texto no es un respaldo válido de SISERAP.',1)}}
 async function rmDemo(){for(const s of S)for(const o of D[s].filter(x=>x.demo)){D[s]=D[s].filter(x=>x!==o);if(db)db.transaction(s,'readwrite').objectStore(s).delete(o.id)}toast('Datos de demostración eliminados.');render()}
 async function demo(){const A=[['Pérez Demo','Ana','4.º','A','Informática','Prof. Ramírez (demo)'],['Gómez Demo','Luis','4.º','A','Informática','Prof. Ramírez (demo)'],['Santos Demo','Marta','5.º','B','Contabilidad','Prof. Almonte (demo)'],['Díaz Demo','Carlos','5.º','B','Contabilidad','Prof. Almonte (demo)'],['Reyes Demo','Sofía','6.º','A','Electricidad','Prof. Mejía (demo)']];
 const T=['Instalar y configurar redes locales','Elaborar estados financieros básicos','Montar circuitos de iluminación','Programar aplicaciones con bases de datos'];
-for(const [i,a] of A.entries()){const s={id:uid(),demo:1,apellidos:a[0],nombres:a[1],grado:a[2],seccion:a[3],area:a[4],asignatura:['Redes','Contabilidad','Instalaciones','Programación'][i%4],anio:'2026-2027',docente:a[5],fecha:today()};await put('students',s);
+for(const [i,a] of A.entries()){const s={id:uid(),demo:1,apellidos:a[0],nombres:a[1],grado:a[2],seccion:a[3],area:a[4],asignatura:['Redes','Contabilidad','Instalaciones','Programación'][i%4],anio:ay,docente:a[5],fecha:today()};await put('students',s);
 for(let j=0;j<=i%2;j++){const e=ES[(i+j)%6];const r={id:uid(),demo:1,est:s.id,cod:'RA-'+(i+1)+'.'+(j+1),desc:T[(i+j)%4]+' (demo)',fecha:today(),motivo:'Evidencia insuficiente (demo)',docente:s.docente,estado:e,hist:[{f:today(),e:'Pendiente',n:'RA identificado'}]};if(e!=='Pendiente')r.hist.push({f:today(),e,n:''});await put('ras',r);
 if(j===0)await put('segs',{id:uid(),demo:1,ra:r.id,f:today(),sit:'No entregó la práctica final (demo)',ori:'Repasar la guía de la unidad',act:'Repetir la práctica',comp:'Entregar en una semana',facord:today(),docente:s.docente,res:''})}}
 await lg('Cargó datos de demostración');toast('Datos DEMO cargados.');render()}
 
+/* AÑO ESCOLAR Y PERFIL */
+let ay='';
+const ST=()=>D.students.filter(s=>s.anio===ay);
+const RS=()=>{const i=new Set(ST().map(s=>s.id));return D.ras.filter(r=>i.has(r.est))};
+const EVS=()=>{const i=new Set(RS().map(r=>r.id));return D.evs.filter(e=>i.has(e.ra))};
+const SGS=()=>{const i=new Set(RS().map(r=>r.id));return D.segs.filter(g=>i.has(g.ra))};
+const PF=()=>D.cfg.find(c=>c.id==='perfil')||{};
+const docN=()=>PF().nombre||'';
+const years=()=>D.cfg.filter(c=>c.t==='anio'&&c.v).map(c=>c.v).sort();
+async function initYear(){let Y=years();const fl0=D.cfg.find(c=>c.id==='anioAct');
+if(!Y.length){const d=new Date(),y=d.getFullYear(),v=d.getMonth()>=7?y+'-'+(y+1):(y-1)+'-'+y;await put('cfg',{id:uid(),t:'anio',v});Y=[v]}
+ay=fl0&&Y.includes(fl0.v)?fl0.v:Y[Y.length-1];
+if(!fl0||fl0.v!==ay)await put('cfg',{id:'anioAct',t:'flag',v:ay});
+for(const s of D.students)if(!s.anio){s.anio=ay;await put('students',s)}}
+async function setAy(v){ay=v;await put('cfg',{id:'anioAct',t:'flag',v});rs='';sgi='';fl={q:'',g:'',s:'',a:'',r:'',e:''};fo={g:'',s:'',a:'',d:'',f:today(),i:''};toast('Año escolar activo: '+v);go(view)}
+async function newYear(){const v=cl($('#ny').value).slice(0,40);if(!v)return toast('Escriba el nombre del año escolar.',1);
+if(years().includes(v))return toast('Ese año escolar ya existe.',1);
+const cp=$('#nycp').checked,old=ST();await put('cfg',{id:uid(),t:'anio',v});
+if(cp)for(const x of old){const{id,demo,...r}=x;await put('students',{...r,id:uid(),anio:v,fecha:today()})}
+await lg('Creó el año escolar '+v);await setAy(v);toast('Año '+v+' creado y activado'+(cp?' con '+old.length+' estudiantes copiados':'')+'.')}
+async function savePF(e){const d=fd(e);for(const k in d)d[k]=cl(d[k]).slice(0,150);if(!d.nombre)return toast('Escriba su nombre completo.',1);await put('cfg',{...PF(),id:'perfil',t:'perfil',...d});lg('Actualizó los datos del docente');toast('Datos del docente guardados.');render()}
+function vPerfil(){const p=PF();return `<div class="card"><h2>Datos del docente</h2><p class="mu">Se usan en los formularios e informes y no hay que escribirlos otra vez. Se guardan solo en este dispositivo.</p><div style="display:flex;gap:14px;align-items:center;margin-bottom:12px;flex-wrap:wrap">${avHtml(72)}<div><input type="file" accept="image/*" onchange="pickPhoto(this)">${p.foto?' <button type="button" class="sm" onclick="delPhoto()">Quitar foto</button>':''}<div class="mu">Foto de perfil (opcional). Se guarda solo en este dispositivo.</div></div></div><form onsubmit="savePF(event)" class="g">${f('nombre','Nombre completo *',p.nombre,'text','required')}${f('cargo','Cargo o título',p.cargo||'Docente')}${f('correo','Correo electrónico',p.correo,'email')}${f('tel','Teléfono',p.tel,'tel')}<div class="w"><button class="p">Guardar datos</button></div></form></div>
+<div class="card"><h2>Año escolar</h2><p class="mu">Año activo: <b>${esc(ay)}</b>. Todo lo que registre queda dentro de este año y no tiene que indicarlo.</p><div class="g"><label>Cambiar de año<select onchange="setAy(this.value)">${years().map(v=>`<option value="${esc(v)}"${v===ay?' selected':''}>${esc(v)}</option>`).join('')}</select></label></div><h2 style="margin-top:14px">Crear un nuevo año escolar</h2><div class="g">${f('ny','Nombre del año','','text','id="ny" placeholder="Ej.: 2027-2028"')}<label style="flex-direction:row;gap:8px;align-items:center;color:var(--tx)"><input type="checkbox" id="nycp" style="min-height:20px;min-width:20px">Copiar la lista de estudiantes del año activo (sin RA)</label></div><p><button class="p" onclick="newYear()">Crear y activar año</button></p></div>`}
+async function migra(){if(D.cfg.some(c=>c.id==='mig1'))return;
+for(const [t,k] of [['area','area'],['grado','grado'],['seccion','seccion'],['asig','asignatura'],['anio','anio'],['doc','docente']]){const have=new Set(D.cfg.filter(c=>c.t===t&&c.v).map(c=>c.v));
+for(const v of new Set(D.students.filter(x=>!x.demo).map(x=>(x[k]||'').trim()).filter(Boolean)))if(!have.has(v)){await put('cfg',{id:uid(),t,v});have.add(v)}}
+await put('cfg',{id:'mig1',t:'flag'})}
 /* NAVEGACIÓN */
-const NAV=[['panel','Panel','📊'],['est','Estudiantes','🎓'],['ra','RA','📌'],['evi','Evidencias','📎'],['seg','Seguimiento','📝'],['form','Formulario','🖨️'],['inf','Informes','📈'],['resp','Respaldo e instalación','💾']];
-const V={panel:vPanel,est:vEst,ra:vRA,evi:vEvi,seg:vSeg,form:vForm,inf:vInf,resp:vResp};
+const NAV=[['panel','Panel','📊'],['est','Estudiantes','🎓'],['ra','RA y asignaturas','📌'],['evi','Evidencias','📎'],['seg','Seguimiento','📝'],['inf','Informes y formularios','📈'],['resp','Respaldo e instalación','💾']];
+const V={panel:vPanel,perfil:vPerfil,est:vEst,ra:vRAx,evi:vEvi,seg:vSeg,inf:vInf,resp:vResp};
 const go=v=>{view=v;ed=null;edE=null;edG=null;dc=null;rst=false;draft={};render();scrollTo(0,0)};
 const pref=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}};
 const eff=()=>document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
 function tgTheme(){const t=eff()==='dark'?'light':'dark';document.documentElement.dataset.theme=t;pref('th',t);render()}
 function tgNav(){nc=!nc;pref('nc',nc?'1':'0');render()}
 addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e});
-function inst(){if(dp){dp.prompt();dp.userChoice.finally(()=>dp=null);return}view='resp';render();scrollTo(0,0)}
+function inst(){if(dp){dp.prompt();dp.userChoice.finally(()=>dp=null);return}dlApp()}
 async function saveFile(fn,data){try{if(DL)await DL.save({filename:fn,data});else{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'text/plain;charset=utf-8'}));a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1e4)}toast('Archivo guardado.')}catch(e){if(!e||e.code!=='declined')toast('No se pudo guardar el archivo.',1)}}
 const dlf=fn=>saveFile(fn,(fn.endsWith('.csv')?'\ufeff':'')+$('#ox').value);
 function dlApp(){const c=document.documentElement.cloneNode(true);['#main','#nav'].forEach(s=>c.querySelector(s).innerHTML='');const t=c.querySelector('#toast');t.className='';t.textContent='';saveFile('SISERAP.html','<!DOCTYPE html>\n'+c.outerHTML)}
-function render(){$('#nav').className='np'+(nc?' c':'');$('#th').textContent=eff()==='dark'?'☀️ Modo claro':'🌙 Modo oscuro';$('#nav').innerHTML=NAV.map(([k,l,i])=>`<button class="${k===view?'on':''}" onclick="go('${k}')" title="${l}" aria-label="${l}"><span class="ic">${i}</span><span class="tx">${l}</span></button>`).join('');
+/* MENÚ SUPERIOR */
+let mo=false;
+function menuHtml(){const on=navigator.onLine,p=PF();
+return `<div class="mh">${avHtml(48)}<div style="min-width:0"><b>${esc(p.nombre||'Docente sin nombre')}</b><div class="mu">${esc(p.cargo||'Docente')}${p.correo?' · '+esc(p.correo):''}</div></div></div>
+<label style="padding:0 6px 8px">Año escolar activo<select onchange="setAy(this.value)">${years().map(v=>`<option value="${esc(v)}"${v===ay?' selected':''}>${esc(v)}</option>`).join('')}</select></label>
+<button class="mi" onclick="mgo('perfil')">✏️ Editar perfil y años escolares</button>
+<button class="mi" onclick="tgTheme()">${eff()==='dark'?'☀️ Modo claro':'🌙 Modo oscuro'}</button>
+<button class="mi" onclick="mgo('resp')">💾 Respaldo y datos</button>
+<button class="mi" onclick="mo=false;showMenu();inst()">⬇ Descargar app</button>
+<div class="mi" style="padding:6px 14px;color:var(--mu);font-size:14px;min-height:36px"><span class="dot" style="background:${on?'var(--ok)':'var(--er)'}"></span>${on?'En línea':'Sin conexión'}</div>`}
+function showMenu(){const m=$('#umenu'),on=navigator.onLine;m.innerHTML=menuHtml();m.hidden=!mo;const b=$('#um');b.setAttribute('aria-expanded',mo?'true':'false');b.innerHTML=`${avHtml(40)}<span class="dot" style="background:${on?'var(--ok)':'var(--er)'}"></span>`;b.title=(docN()||'Mi perfil')+' · '+ay}
+function tgMenu(e){if(e)e.stopPropagation();mo=!mo;showMenu()}
+const mgo=v=>{mo=false;go(v)};
+document.addEventListener('click',e=>{if(mo&&!e.target.closest('#umenu')){mo=false;showMenu()}});
+addEventListener('keydown',e=>{if(e.key==='Escape'&&mo){mo=false;showMenu()}});
+function render(){$('#nav').className='np'+(nc?' c':'');$('#nav').innerHTML=NAV.map(([k,l,i])=>`<button class="${k===view?'on':''}" onclick="go('${k}')" title="${l}" aria-label="${l}"><span class="ic">${i}</span><span class="tx">${l}</span></button>`).join('');
 $('#main').innerHTML=V[view]();$('#date').textContent=new Date().toLocaleDateString('es-DO',{day:'numeric',month:'long',year:'numeric'});
-$('#net').textContent=navigator.onLine?'En línea':'Sin conexión';
+showMenu();
 $('#warn').textContent=db?'Modo local: los datos se guardan solo en este navegador y no se sincronizan con otros dispositivos. Haga respaldos periódicos.':'Almacenamiento no disponible: los datos se perderán al cerrar esta página.'}
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
-addEventListener('online',render);addEventListener('offline',render);
+const nt=()=>showMenu();addEventListener('online',nt);addEventListener('offline',nt);
+addEventListener('error',e=>toast('Ocurrió un error: '+(e.message||'desconocido'),1));addEventListener('unhandledrejection',e=>toast('Ocurrió un error al guardar o leer datos.',1));
 {const t=pref('th');if(t)document.documentElement.dataset.theme=t;const c=pref('nc');if(c)nc=c==='1'}
 try{window.claude&&claude.use('downloads').then(d=>DL=d).catch(()=>{})}catch(e){}
-(async()=>{try{await openDB();for(const s of S)D[s]=await new Promise(r=>{const q=db.transaction(s).objectStore(s).getAll();q.onsuccess=()=>r(q.result)})}catch(e){db=null}render()})();
+(async()=>{try{await openDB();for(const s of S)D[s]=await new Promise(r=>{const q=db.transaction(s).objectStore(s).getAll();q.onsuccess=()=>r(q.result)});for(const s of S)D[s]=D[s].map(o=>sane(s,o)).filter(Boolean)}catch(e){db=null}await migra();await initYear();render()})();
 </script></body></html>
